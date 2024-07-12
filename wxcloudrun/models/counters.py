@@ -14,4 +14,4 @@ class Counters(models.Model):
         return self.count
 
     class Meta:
-        db_table = 'Counters'  # 数据库表名
+        db_table = 'Countes'  # 数据库表名
