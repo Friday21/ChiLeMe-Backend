@@ -12,12 +12,12 @@ class DinnerView(View):
     def dispatch(self, request, *args, **kwargs):
         return super(DinnerView, self).dispatch(request, *args, **kwargs)
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         dinners = Dinners.objects.order_by('-date').all()
         result = [dinner.to_json() for dinner in dinners]
         return JsonResponse(data={'data': result, 'code': 0})
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         user_openId = request.POST.get('user_openId')
         org_file_id = request.POST.get('file_id')
         location = request.POST.get('location')
