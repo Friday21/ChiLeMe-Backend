@@ -34,16 +34,16 @@ class Dinners(models.Model):
         db_table = 'Dinners'  # 数据库表名
 
     def get_url(self):
-        if not self.file_id:
+        if not self.org_file_id:
             return ''
 
-        if self.file_id.startswith('cloud'):
-            arr = self.file_id.split('/')
+        if self.org_file_id.startswith('cloud'):
+            arr = self.org_file_id.split('/')
             arr[0] = 'https:'
             arr[2] = arr[2].split('.')[1] + '.tcb.qcloud.la'
             return '/'.join(arr)
         else:
-            return self.file_id
+            return self.org_file_id
 
     def to_json(self):
         return {
