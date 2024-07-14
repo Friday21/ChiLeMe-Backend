@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from django.db import models
@@ -20,3 +21,14 @@ class Users(models.Model):
 
     class Meta:
         db_table = 'Users'  # 数据库表名
+
+    def to_json(self):
+        return {
+            "alias": self.alias,
+            "open_id": self.open_id,
+            "avatar_url": self.avatar_url,
+            "phone": self.phone,
+            "friends": json.loads(self.friends),
+            "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
+            "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
+        }
