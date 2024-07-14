@@ -24,11 +24,17 @@ class LoginView(View):
             return JsonResponse({'code': 400, 'msg': "参数不合法"})
 
         # 这些应当从环境变量或配置文件中获取而不是硬编码在代码里
-        APP_ID = os.environ.get("APPID")
-        APP_SECRET = os.environ.get("APP_SECRET")
+        APP_ID = os.environ.get("APPID").strip()
+        APP_SECRET = os.environ.get("APP_SECRET").strip()
 
-        url = f'https://api.weixin.qq.com/sns/jscode2session?appid={APP_ID}&secret={APP_SECRET}&js_code={code}&grant_type=authorization_code'
-        response = requests.get(url)
+        url = f'https://api.weixin.qq.com/sns/jscode2session'
+        params = {
+            "appid": APP_ID,
+            "secret": APP_SECRET,
+            "js_code": code,
+            "grant_type": "authorization_code"
+        }
+        response = requests.get(url, params=params)
         if response.status_code != 200:
             return JsonResponse({'code': 500, 'msg': "获取open id报错， error: {}".format(response.json())})
         data = response.json()
