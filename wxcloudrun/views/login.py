@@ -34,7 +34,7 @@ class LoginView(View):
             "js_code": code,
             "grant_type": "authorization_code"
         }
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, verify=False)
         if response.status_code != 200:
             return JsonResponse({'code': 500, 'msg': "获取open id报错， error: {}".format(response.json())})
         data = response.json()
