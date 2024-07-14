@@ -33,6 +33,18 @@ class Dinners(models.Model):
     class Meta:
         db_table = 'Dinners'  # 数据库表名
 
+    def get_url(self):
+        if not self.file_id:
+            return ''
+
+        if self.file_id.startswith('cloud'):
+            arr = self.file_id.split('/')
+            arr[0] = 'https:'
+            arr[2] = arr[2].split('.')[1] + '.tcb.qcloud.la'
+            return '/'.join(arr)
+        else:
+            return self.file_id
+
     def to_json(self):
         return {
             "id": self.id,
@@ -40,8 +52,10 @@ class Dinners(models.Model):
             "healthy_star": self.healthy_star,
             "delicious_star": self.delicious_star,
             "location": self.location,
-            "pic_url": self.pic_url,
+            "pic_url": self.get_url(),
+            "file_id": self.file_id,
             "type": self.type,
             "date": self.date.strftime("%Y-%m-%d"),
-            "create_at": self.createdAt.strftime("%Y-%m-%d %H:%M")
+            "create_at": self.createdAt.strftime("%Y-%m-%d %H:%M"),
+            "update_at": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
         }
