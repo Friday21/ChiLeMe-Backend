@@ -48,14 +48,14 @@ class Dinners(models.Model):
     def to_json(self):
         return {
             "id": self.id,
-            "user_openId": self.user_openId,
-            "healthy_star": self.healthy_star,
-            "delicious_star": self.delicious_star,
+            "userOpenId": self.user_openId,
+            "healthyStar": self.healthy_star,
+            "deliciousStar": self.delicious_star,
             "location": self.location,
-            "pic_url": self.get_url(),
-            "file_id": self.file_id,
+            "picUrl": self.get_url(),
+            "fileId": self.file_id,
             "type": self.type,
             "date": self.date.strftime("%Y-%m-%d"),
-            "create_at": self.createdAt.strftime("%Y-%m-%d %H:%M"),
-            "update_at": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
+            "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
+            "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
         }
