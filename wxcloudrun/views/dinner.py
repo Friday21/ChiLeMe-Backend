@@ -1,3 +1,5 @@
+import json
+
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.generic import View
 from django.utils.decorators import method_decorator
@@ -18,10 +20,13 @@ class DinnerView(View):
         return JsonResponse(data={'data': result, 'code': 0})
 
     def post(self, request, *args, **kwargs):
-        user_openId = request.POST.get('user_openId')
-        org_file_id = request.POST.get('file_id')
-        location = request.POST.get('location')
-        pic_url = request.POST.get('pic_url', "")
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+
+        user_openId = body.get('user_openId')
+        org_file_id = body.get('file_id')
+        location = body.get('location')
+        pic_url = body.get('pic_url', "")
         if not all([user_openId, org_file_id, location]):
             return JsonResponse({'code': 400, 'msg': "参数不合法"})
 
