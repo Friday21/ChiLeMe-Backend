@@ -38,7 +38,7 @@ class LoginView(View):
         if response.status_code != 200:
             return JsonResponse({'code': 500, 'msg': "获取open id报错， error: {}".format(response.json())})
         data = response.json()
-        open_id = data['openId']
+        open_id = data['openid']
         userInfo = Users.objects.filter(open_id=open_id).first()
         data = {
             "openId": open_id,
