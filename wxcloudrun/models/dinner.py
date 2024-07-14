@@ -43,5 +43,5 @@ class Dinners(models.Model):
             "pic_url": self.pic_url,
             "type": self.type,
             "date": self.date.strftime("%Y-%m-%d"),
-            "create_at": self.createdA.strftime("%Y-%m-%d %H:%M")
+            "create_at": self.createdAt.strftime("%Y-%m-%d %H:%M")
         }
