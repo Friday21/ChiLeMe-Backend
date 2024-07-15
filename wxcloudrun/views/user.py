@@ -12,7 +12,7 @@ class UserView(View):
     def dispatch(self, request, *args, **kwargs):
         return super(UserView, self).dispatch(request, *args, **kwargs)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
 

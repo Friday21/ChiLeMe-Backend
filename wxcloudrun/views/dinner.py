@@ -15,8 +15,8 @@ class DinnerView(View):
     def dispatch(self, request, *args, **kwargs):
         return super(DinnerView, self).dispatch(request, *args, **kwargs)
 
-    def get(self, request, *args, **kwargs):
-        dinners = Dinners.objects.order_by('-createdAt').all()
+    def get(self, request, openId, *args, **kwargs):
+        dinners = Dinners.objects.filter(user_openId=openId).order_by('-createdAt').all()
         result = [dinner.to_json() for dinner in dinners]
         return JsonResponse(data={'data': result, 'code': 0})
 

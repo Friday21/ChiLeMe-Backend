@@ -20,7 +20,7 @@ from django.conf.urls import url
 urlpatterns = (
     # 计数器接口
     url(r'^^api/count(/)?$', counter),
-    url(r'^^api/dinners(/)?$', DinnerView.as_view()),
+    url(r'^^api/dinners/(?P<openId>\w+)(/)?$', DinnerView.as_view()),
     url(r'^^api/login(/)?$', LoginView.as_view()),
     url(r'^^api/users(/)?$', UserView.as_view()),
 )
