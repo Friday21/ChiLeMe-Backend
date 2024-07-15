@@ -23,7 +23,7 @@ class Dinners(models.Model):
     org_file_id = models.CharField(max_length=256, default="")
     type = models.CharField(max_length=32, default="")
 
-    date = models.DateField(default=datetime.now().date())
+    date = models.DateField()
     createdAt = models.DateTimeField(default=datetime.now(), )
     updatedAt = models.DateTimeField(default=datetime.now(),)
 

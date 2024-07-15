@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.generic import View
@@ -33,6 +34,7 @@ class DinnerView(View):
         dinner = Dinners(user_openId=user_openId,
                          org_file_id=org_file_id,
                          location=location,
+                         date=datetime.now().date(),
                          pic_url=pic_url)
         dinner.save()
         return JsonResponse(data={'code': 0, 'data': dinner.to_json()})

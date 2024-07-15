@@ -13,4 +13,18 @@ class UserView(View):
         return super(UserView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request):
-        return JsonResponse(data={'msg': 'success'})
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+
+        open_id = body.get('open_id')
+        avatar_url = body.get('avatar_url')
+        alias = body.get('alias')
+        if not all([open_id, avatar_url, alias]):
+            return JsonResponse({'code': 400, 'msg': "参数不合法"})
+        user = Users.objects.filter(open_id=open_id).first()
+        if not user:
+            user = Users(open_id=open_id)
+        user.alias = alias
+        user.avatar_url = avatar_url
+        user.save()
+        return JsonResponse(data={'code': 0, 'data': user.to_json()})
