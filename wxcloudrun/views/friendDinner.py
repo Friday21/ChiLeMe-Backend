@@ -16,7 +16,7 @@ class FriendDinnerView(View):
         return super(FriendDinnerView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, openId, *args, **kwargs):
-        dinners = Dinners.objects.filter(user_openId__ne=openId).order_by('-createdAt').all()
+        dinners = Dinners.objects.exclude(user_openId=openId).order_by('-createdAt').all()
         result = [dinner.to_json() for dinner in dinners]
         return JsonResponse(data={'data': result, 'code': 0})
 
