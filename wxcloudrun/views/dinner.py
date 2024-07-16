@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.generic import View
@@ -31,7 +31,8 @@ class DinnerView(View):
         if not all([user_openId, org_file_id, location]):
             return JsonResponse({'code': 400, 'msg': "参数不合法"})
         dinner_type = "早餐"
-        now = datetime.now().hour
+        current = datetime.now() + timedelta(hours=8)
+        now = current.hour
         if 0 <= now <= 4 or now > 22:
             dinner_type = "夜宵"
         elif 4 < now < 10:
@@ -47,8 +48,8 @@ class DinnerView(View):
         dinner = Dinners(user_openId=user_openId,
                          org_file_id=org_file_id,
                          location=location,
-                         date=datetime.now().date(),
-                         createdAt=datetime.now(),
+                         date=current.date(),
+                         createdAt=current,
                          type=dinner_type,
                          pic_url=pic_url)
         dinner.save()
