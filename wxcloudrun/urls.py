@@ -24,5 +24,5 @@ urlpatterns = (
     url(r'^^api/friend/dinners/(?P<openId>\w+)(/)?$', FriendDinnerView.as_view()),
     url(r'^^api/login(/)?$', LoginView.as_view()),
     url(r'^^api/users(/)?$', UserView.as_view()),
-    url(r'^^api/dinners/likes(/)?$', DinnerLikeView.as_view()),
+    url(r'^^api/dinnersLikes(/)?$', DinnerLikeView.as_view()),
 )
