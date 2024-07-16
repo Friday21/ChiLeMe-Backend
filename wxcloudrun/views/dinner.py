@@ -30,11 +30,26 @@ class DinnerView(View):
         pic_url = body.get('pic_url', "")
         if not all([user_openId, org_file_id, location]):
             return JsonResponse({'code': 400, 'msg': "参数不合法"})
-
+        dinner_type = "早餐"
+        now = datetime.now().hour
+        if 0 <= now <= 4 or now > 22:
+            dinner_type = "夜宵"
+        elif 4 < now < 10:
+            dinner_type = "早餐"
+        elif 10 < now <= 11:
+            dinner_type = "早午饭"
+        elif 11 < now <= 14:
+            dinner_type = "午饭"
+        elif 14 < now < 17:
+            dinner_type = "下午茶"
+        elif 17 <= now <= 22:
+            dinner_type = "晚饭"
         dinner = Dinners(user_openId=user_openId,
                          org_file_id=org_file_id,
                          location=location,
                          date=datetime.now().date(),
+                         createdAt=datetime.now(),
+                         type=dinner_type,
                          pic_url=pic_url)
         dinner.save()
         return JsonResponse(data={'code': 0, 'data': dinner.to_json()})

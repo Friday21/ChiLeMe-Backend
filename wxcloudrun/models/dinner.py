@@ -1,4 +1,4 @@
-from datetime import datetime
+import json
 
 from django.db import models
 
@@ -16,6 +16,7 @@ class Dinners(models.Model):
     user_openId = models.CharField(max_length=256, default="")
     healthy_star = models.SmallIntegerField(max_length=2, default=0)
     delicious_star = models.SmallIntegerField(max_length=2, default=0)
+    beauty_star = models.SmallIntegerField(max_length=2, default=0)
     friends_stars = models.TextField(default="[]")
     location = models.CharField(max_length=256, default="")
     pic_url = models.CharField(max_length=256, default="")
@@ -24,8 +25,8 @@ class Dinners(models.Model):
     type = models.CharField(max_length=32, default="")
 
     date = models.DateField()
-    createdAt = models.DateTimeField(default=datetime.now(), )
-    updatedAt = models.DateTimeField(default=datetime.now(),)
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return "dinner {}".format(self.user_openId)
@@ -51,6 +52,7 @@ class Dinners(models.Model):
             "userOpenId": self.user_openId,
             "healthyStar": self.healthy_star,
             "deliciousStar": self.delicious_star,
+            "beautyStar": self.beauty_star,
             "location": self.location,
             "picUrl": self.get_url(),
             "fileId": self.file_id,
@@ -59,3 +61,38 @@ class Dinners(models.Model):
             "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
             "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
         }
+
+    def update_start(self, from_openId, healthy_star, delicious_star, beauty_star):
+        friends_stars = json.loads(self.friends_stars)
+        for item in friends_stars:
+            if item['from_openId'] == from_openId:
+                item['healthy_star'] = healthy_star if healthy_star != 0 else item['healthy_star']
+                item['delicious_star'] = delicious_star if delicious_star != 0 else item['delicious_star']
+                item['beauty_star'] = beauty_star if beauty_star != 0 else item['beauty_star']
+                break
+        else:
+            friends_stars.append(
+                {
+                    "from_openId": from_openId,
+                    "healthy_star": healthy_star,
+                    "delicious_star": delicious_star,
+                    "beauty_star": beauty_star,
+                 }
+            )
+
+        healthy_stars = [item['healthy_star'] for item in friends_stars if item['healthy_star'] != 0]
+        delicious_stars = [item['delicious_star'] for item in friends_stars if item['delicious_star'] != 0]
+        beauty_stars = [item['beauty_star'] for item in friends_stars if item['beauty_star'] != 0]
+        self.healthy_star = self.cal_star(healthy_stars)
+        self.delicious_star = self.cal_star(delicious_stars)
+        self.beauty_star = self.cal_star(beauty_stars)
+        self.friends_stars = json.dumps(friends_stars)
+        self.save()
+        return self.to_json()
+
+    @classmethod
+    def cal_star(cls, stars):
+        if len(stars) == 0:
+            return 0
+        star = int(sum(stars)/len(stars) * 10)
+        return star
