@@ -88,7 +88,7 @@ class Dinners(models.Model):
         self.beauty_star = self.cal_star(beauty_stars)
         self.friends_stars = json.dumps(friends_stars)
         self.save()
-        return self.to_json()
+        return self
 
     @classmethod
     def cal_star(cls, stars):
