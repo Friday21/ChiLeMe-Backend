@@ -37,9 +37,7 @@ class DinnerView(View):
             dinner_type = "夜宵"
         elif 4 < now < 10:
             dinner_type = "早餐"
-        elif 10 < now <= 11:
-            dinner_type = "早午饭"
-        elif 11 < now <= 14:
+        elif 11 <= now <= 14:
             dinner_type = "午饭"
         elif 14 < now < 17:
             dinner_type = "下午茶"

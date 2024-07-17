@@ -17,24 +17,6 @@ class FriendDinnerView(View):
 
     def get(self, request, openId, *args, **kwargs):
         dinners = Dinners.objects.exclude(user_openId=openId).exclude(user_openId="").order_by('-createdAt').all()
-        result = [dinner.to_json() for dinner in dinners]
+        result = [dinner.to_friend_json(openId) for dinner in dinners]
         return JsonResponse(data={'data': result, 'code': 0})
 
-    def post(self, request, *args, **kwargs):
-        body_unicode = request.body.decode('utf-8')
-        body = json.loads(body_unicode)
-
-        user_openId = body.get('user_openId')
-        org_file_id = body.get('file_id')
-        location = body.get('location')
-        pic_url = body.get('pic_url', "")
-        if not all([user_openId, org_file_id, location]):
-            return JsonResponse({'code': 400, 'msg': "参数不合法"})
-
-        dinner = Dinners(user_openId=user_openId,
-                         org_file_id=org_file_id,
-                         location=location,
-                         date=datetime.now().date(),
-                         pic_url=pic_url)
-        dinner.save()
-        return JsonResponse(data={'code': 0, 'data': dinner.to_json()})

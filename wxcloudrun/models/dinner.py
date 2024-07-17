@@ -46,6 +46,35 @@ class Dinners(models.Model):
         else:
             return self.org_file_id
 
+    def to_friend_json(self, open_id):
+        friends_stars = json.loads(self.friends_stars)
+        stars = {
+            'healthy_star': 0,
+            'delicious_star': 0,
+            'beauty_star': 0
+        }
+        for item in friends_stars:
+            if item['from_openId'] == open_id:
+                stars['healthy_star'] = item['healthy_star']
+                stars['delicious_star'] = item['delicious_star']
+                stars['beauty_star'] = item['beauty_star']
+                break
+
+        return {
+            "id": self.id,
+            "userOpenId": self.user_openId,
+            "healthyStar": stars['healthy_star'],
+            "deliciousStar": stars['delicious_star'],
+            "beautyStar": stars['beauty_star'],
+            "location": self.location,
+            "picUrl": self.get_url(),
+            "fileId": self.file_id,
+            "type": self.type,
+            "date": self.date.strftime("%Y-%m-%d"),
+            "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
+            "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
+        }
+
     def to_json(self):
         return {
             "id": self.id,
