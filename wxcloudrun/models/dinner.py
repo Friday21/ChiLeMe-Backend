@@ -57,13 +57,10 @@ class Dinners(models.Model):
             'beauty_star': 0
         }
         for item in friends_stars:
-            logger.info("open_id: {}, from_openId: {}".format(open_id, item['from_openId']))
-            logger.info(item)
             if item['from_openId'] == open_id:
-                stars['healthy_star'] = item['healthy_star']
-                stars['delicious_star'] = item['delicious_star']
-                stars['beauty_star'] = item['beauty_star']
-                logger.info('the same')
+                stars['healthy_star'] = item['healthy_star'] * 10
+                stars['delicious_star'] = item['delicious_star'] * 10
+                stars['beauty_star'] = item['beauty_star'] * 10
                 break
 
         return {
