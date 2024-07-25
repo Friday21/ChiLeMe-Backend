@@ -4,3 +4,4 @@ from .user import *
 from .login import *
 from .friend_dinner import *
 from .dinner_likes import *
+from .friend import *
