@@ -16,7 +16,22 @@ class FriendDinnerView(View):
         return super(FriendDinnerView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, openId, *args, **kwargs):
-        dinners = Dinners.objects.exclude(user_openId=openId).exclude(user_openId="").order_by('-createdAt')[:1000]
-        result = [dinner.to_friend_json(openId) for dinner in dinners]
+        user = Users.objects.filter(open_id=openId).first()
+        if not user:
+            return JsonResponse({'code': 400, 'msg': "参数不合法"})
+        friends = json.loads(user.friends)
+        friend_dict = dict()
+        for friend in friends:
+            friend_dict[friend['open_id']] = {
+                friend
+            }
+        open_ids = [friend['open_id'] for friend in friends]
+        dinners = Dinners.objects.filter(user_openId__in=open_ids).order_by('-createdAt')[:1000]
+        result = []
+        for dinner in dinners:
+            info = dinner.to_friend_json(openId)
+            dinner_user_info = friend_dict[dinner.user_openId]
+            info.update(dinner_user_info)
+            result.append(info)
         return JsonResponse(data={'data': result, 'code': 0})
 

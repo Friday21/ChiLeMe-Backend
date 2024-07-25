@@ -27,4 +27,8 @@ class UserView(View):
         user.alias = alias
         user.avatar_url = avatar_url
         user.save()
+
+        # 更新好友信息
+        user.update_friend_info()
+
         return JsonResponse(data={'code': 0, 'data': user.to_json()})

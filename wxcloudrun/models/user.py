@@ -57,3 +57,10 @@ class Users(models.Model):
         new_friends = [friend for friend in friends if friend['open_id'] != user.open_id]
         self.friends = json.dumps(new_friends)
         self.save()
+
+    def update_friend_info(self):
+        friends = json.loads(self.friends)
+        friend_open_ids = [friend['open_id'] for friend in friends]
+        users = Users.objects.filter(open_id__in=friend_open_ids).all()
+        for user in users:
+            user.add_friend(self)
