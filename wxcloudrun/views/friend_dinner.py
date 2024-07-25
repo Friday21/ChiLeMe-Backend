@@ -22,9 +22,7 @@ class FriendDinnerView(View):
         friends = json.loads(user.friends)
         friend_dict = dict()
         for friend in friends:
-            friend_dict[friend['open_id']] = {
-                friend
-            }
+            friend_dict[friend['open_id']] = friend
         open_ids = [friend['open_id'] for friend in friends]
         dinners = Dinners.objects.filter(user_openId__in=open_ids).order_by('-createdAt')[:1000]
         result = []
