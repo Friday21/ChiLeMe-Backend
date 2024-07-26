@@ -22,6 +22,19 @@ class Users(models.Model):
     class Meta:
         db_table = 'Users'  # 数据库表名
 
+    @classmethod
+    def get_url(cls, file_id):
+        if not file_id:
+            return ''
+
+        if file_id.startswith('cloud'):
+            arr = file_id.split('/')
+            arr[0] = 'https:'
+            arr[2] = arr[2].split('.')[1] + '.tcb.qcloud.la'
+            return '/'.join(arr)
+        else:
+            return file_id
+
     def to_simple_json(self):
         return {
             "alias": self.alias,

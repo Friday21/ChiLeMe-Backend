@@ -18,6 +18,7 @@ class UserView(View):
 
         open_id = body.get('open_id')
         avatar_url = body.get('avatar_url')
+        avatar_url = Users.get_url(avatar_url)
         alias = body.get('alias')
         if not all([open_id, avatar_url, alias]):
             return JsonResponse({'code': 400, 'msg': "参数不合法"})
