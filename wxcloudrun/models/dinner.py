@@ -89,6 +89,7 @@ class Dinners(models.Model):
             "picUrl": self.get_url(),
             "fileId": self.file_id,
             "type": self.type,
+            "friends_stars": json.loads(self.friends_stars),
             "date": self.date.strftime("%Y-%m-%d"),
             "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
             "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),

@@ -17,7 +17,22 @@ class DinnerView(View):
 
     def get(self, request, openId, *args, **kwargs):
         dinners = Dinners.objects.filter(user_openId=openId).order_by('-createdAt')[:1000]
+        open_ids = []
         result = [dinner.to_json() for dinner in dinners]
+        for info in result:
+            for friend_star in info['friends_stars']:
+                open_ids.append(friend_star['from_openId'])
+        open_ids = list(set(open_ids))
+        users = Users.object.filter(open_id__in=open_ids).all()
+        open_id_avatar_map = dict()
+        for user in users:
+            open_id_avatar_map[user.open_id] = user.avatar_url
+
+        for info in result:
+            friends_avatars = []
+            for friend_star in info['friends_stars']:
+                friends_avatars.append(open_id_avatar_map.get(friend_star['from_openId'], ''))
+            info['friends_avatars'] = list(set(friends_avatars))
         return JsonResponse(data={'data': result, 'code': 0})
 
     def post(self, request, *args, **kwargs):
