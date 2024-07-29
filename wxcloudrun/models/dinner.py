@@ -2,6 +2,7 @@ import json
 import logging
 
 from django.db import models
+from .user import Users
 
 logger = logging.getLogger('log')
 
@@ -94,6 +95,23 @@ class Dinners(models.Model):
             "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
             "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
         }
+
+    def to_self_json(self):
+        info = self.to_json()
+        open_ids = []
+        for friend_star in info['friends_stars']:
+            open_ids.append(friend_star['from_openId'])
+        open_ids = list(set(open_ids))
+        users = Users.objects.filter(open_id__in=open_ids).all()
+        open_id_avatar_map = dict()
+        for user in users:
+            open_id_avatar_map[user.open_id] = user.avatar_url
+
+        friends_avatars = []
+        for friend_star in info['friends_stars']:
+            friends_avatars.append(open_id_avatar_map.get(friend_star['from_openId'], ''))
+        info['friends_avatars'] = list(set(friends_avatars))[:3]
+        return info
 
     def update_start(self, from_openId, healthy_star, delicious_star, beauty_star):
         friends_stars = json.loads(self.friends_stars)

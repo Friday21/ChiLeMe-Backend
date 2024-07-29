@@ -33,4 +33,6 @@ class DinnerLikeView(View):
         if not dinner:
             return JsonResponse(data={'code': -1, 'msg': "dinner找不到"})
         new_dinner = dinner.update_start(from_openId, healthy_star, delicious_star, beauty_star)
+        if from_openId == dinner.user_openId:
+            return JsonResponse(data={'code': 0, 'data': new_dinner.to_self_json()})
         return JsonResponse(data={'code': 0, 'data': new_dinner.to_friend_json(from_openId)})

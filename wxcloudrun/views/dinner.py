@@ -32,7 +32,7 @@ class DinnerView(View):
             friends_avatars = []
             for friend_star in info['friends_stars']:
                 friends_avatars.append(open_id_avatar_map.get(friend_star['from_openId'], ''))
-            info['friends_avatars'] = list(set(friends_avatars))
+            info['friends_avatars'] = list(set(friends_avatars))[:3]
         return JsonResponse(data={'data': result, 'code': 0})
 
     def post(self, request, *args, **kwargs):
