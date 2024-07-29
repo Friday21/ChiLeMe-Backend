@@ -23,7 +23,7 @@ class DinnerView(View):
             for friend_star in info['friends_stars']:
                 open_ids.append(friend_star['from_openId'])
         open_ids = list(set(open_ids))
-        users = Users.object.filter(open_id__in=open_ids).all()
+        users = Users.objects.filter(open_id__in=open_ids).all()
         open_id_avatar_map = dict()
         for user in users:
             open_id_avatar_map[user.open_id] = user.avatar_url
