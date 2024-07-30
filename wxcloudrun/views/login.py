@@ -43,7 +43,10 @@ class LoginView(View):
         data = {
             "openId": open_id,
             "sessionId": data["session_key"],
-            "userInfo": userInfo.to_json() if userInfo else None,
+            "userInfo": userInfo.to_json() if (userInfo and userInfo.alias) else None,
         }
+        if not userInfo:
+            user = Users(open_id=open_id, createdAt=datetime.now())
+            user.save()
 
         return JsonResponse(data={'code': 0, 'data': data})
