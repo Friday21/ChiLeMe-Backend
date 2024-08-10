@@ -36,3 +36,19 @@ class DinnerLikeView(View):
         if from_openId == dinner.user_openId:
             return JsonResponse(data={'code': 0, 'data': new_dinner.to_self_json()})
         return JsonResponse(data={'code': 0, 'data': new_dinner.to_friend_json(from_openId)})
+
+    def delete(self, request, *args, **kwargs):
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+
+        from_openId = body.get('from_openId')
+        dinner_id = body.get('dinner_id')
+        if not all([from_openId, dinner_id]):
+            return JsonResponse({'code': 400, 'msg': "参数不合法"})
+        dinner = Dinners.objects.filter(id=dinner_id).first()
+        if not dinner:
+            return JsonResponse({'code': 404, 'msg': "dinner不存在"})
+        new_dinner = dinner.delete_star(from_openId)
+        if from_openId == dinner.user_openId:
+            return JsonResponse(data={'code': 0, 'data': new_dinner.to_self_json()})
+        return JsonResponse(data={'code': 0, 'data': new_dinner.to_friend_json(from_openId)})

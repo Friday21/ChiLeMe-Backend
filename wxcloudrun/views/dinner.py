@@ -67,3 +67,19 @@ class DinnerView(View):
                          pic_url=pic_url)
         dinner.save()
         return JsonResponse(data={'code': 0, 'data': dinner.to_json()})
+
+    def delete(self, request, *args, **kwargs):
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+
+        user_openId = body.get('user_openId')
+        dinner_id = body.get('dinner_id')
+        if not all([user_openId, dinner_id]):
+            return JsonResponse({'code': 400, 'msg': "参数不合法"})
+        dinner = Dinners.objects.filter(id=dinner_id).first()
+        if not dinner:
+            return JsonResponse({'code': 404, 'msg': "dinner不存在"})
+        if dinner.user_openId != user_openId:
+            return JsonResponse({'code': 403, 'msg': "没权限删除别人的dinner"})
+        dinner.delete()
+        return JsonResponse(data={'code': 0, 'data': {}})

@@ -141,6 +141,19 @@ class Dinners(models.Model):
         self.save()
         return self
 
+    def delete_star(self, from_openId):
+        friends_stars = json.loads(self.friends_stars)
+        friends_stars = [item for item in friends_stars if item['from_openId'] != from_openId]
+        healthy_stars = [item['healthy_star'] for item in friends_stars if item['healthy_star'] != 0]
+        delicious_stars = [item['delicious_star'] for item in friends_stars if item['delicious_star'] != 0]
+        beauty_stars = [item['beauty_star'] for item in friends_stars if item['beauty_star'] != 0]
+        self.healthy_star = self.cal_star(healthy_stars)
+        self.delicious_star = self.cal_star(delicious_stars)
+        self.beauty_star = self.cal_star(beauty_stars)
+        self.friends_stars = json.dumps(friends_stars)
+        self.save()
+        return self
+
     @classmethod
     def cal_star(cls, stars):
         if len(stars) == 0:
