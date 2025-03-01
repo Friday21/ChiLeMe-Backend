@@ -1,7 +1,7 @@
 import os
 import requests
 from pydub import AudioSegment
-import speech as speechsdk
+import azure.cognitiveservices.speech as speechsdk
 
 
 def recognize_from_url(open_id, audio_url: str):
