@@ -17,8 +17,10 @@ class UserNotesView(View):
         return super(UserNotesView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, openId, *args, **kwargs):
-        user_notes = UserNotes.objects.filter(user_openId=openId).order_by('-createdAt')[:100]
-        return [note.to_json() for note in user_notes]
+        user_notes = UserNotes.objects.filter(user_openId=openId).order_by('-createdAt')[:100].all()
+        result = [note.to_json() for note in user_notes]
+
+        return JsonResponse(data={'data': result, 'code': 0})
 
     # 声音转语音， 并调用LLM分析分类、情绪
     def post(self, request, openId, *args, **kwargs):
