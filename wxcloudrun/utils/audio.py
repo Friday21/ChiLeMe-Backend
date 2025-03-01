@@ -1,14 +1,14 @@
 import os
 import requests
 from pydub import AudioSegment
-import azure.cognitiveservices.speech as speechsdk
+import speech as speechsdk
 
 
 def recognize_from_url(open_id, audio_url: str):
     # Azure 语音服务配置
     speech_config = speechsdk.SpeechConfig(
-        subscription=os.environ.get("SPEECH_KEY"),
-        region=os.environ.get("SPEECH_REGION"),
+        subscription="7TcuMWrUOoqaoFJu8yMrI7EgeFZJW5uKB8VsoMp0Hy6UA1i2E004JQQJ99BCACYeBjFXJ3w3AAAYACOGbxve",
+        region="eastus",
     )
 
     speech_config.speech_recognition_language = "zh-CN"
@@ -67,5 +67,5 @@ def recognize_from_url(open_id, audio_url: str):
 
 
 if __name__ == '__main__':
-    text = recognize_from_url("test", "https://7072-prod-9g5b6d374032de85-1327836217.tcb.qcloud.la/voices/orjoY7et_lrDdpT85J0BwKufgEsk/1740793178928-443.wav")
+    text = recognize_from_url("test", "https://7072-prod-9g5b6d374032de85-1327836217.tcb.qcloud.la/voices/orjoY7et_lrDdpT85J0BwKufgEsk/1740798917726-62.wav")
     print(text)
