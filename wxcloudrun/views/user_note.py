@@ -10,11 +10,11 @@ from wxcloudrun.utils import recognize_from_url,chat_with_assistant
 from wxcloudrun.models import UserNotes, Users
 
 
-class AudioView(View):
+class UserNotesView(View):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
-        return super(AudioView, self).dispatch(request, *args, **kwargs)
+        return super(UserNotesView, self).dispatch(request, *args, **kwargs)
 
     # 声音转语音， 并调用LLM分析分类、情绪
     def post(self, request, openId, *args, **kwargs):

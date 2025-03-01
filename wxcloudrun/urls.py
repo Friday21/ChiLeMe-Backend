@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from wxcloudrun.views import counter, UserView, DinnerView, LoginView, FriendDinnerView, DinnerLikeView, FriendView
+from wxcloudrun.views import counter, UserView, DinnerView, LoginView, FriendDinnerView, DinnerLikeView, FriendView, UserNotesView
 from django.conf.urls import url
 
 urlpatterns = (
@@ -26,4 +26,5 @@ urlpatterns = (
     url(r'^^api/login(/)?$', LoginView.as_view()),
     url(r'^^api/users(/)?$', UserView.as_view()),
     url(r'^^api/dinnersLikes(/)?$', DinnerLikeView.as_view()),
+    url(r'^^api/usernotes(/)?$', UserNotesView.as_view()),
 )
