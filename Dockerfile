@@ -24,7 +24,7 @@ RUN pip config set global.index-url http://mirrors.cloud.tencent.com/pypi/simple
     && pip install --user -r requirements.txt
 
 # 如果使用了本地的 wheel 文件，请确保路径和平台兼容
-RUN pip install /app/wxcloudrun/utils/azure_azure_azure_cognitiveservices_speech-1.42.0-py3-none-manylinux1_x86_64.whl
+RUN pip install /app/wxcloudrun/utils/azure_cognitiveservices_speech-1.42.0-py3-none-manylinux1_x86_64.whl
 
 # 暴露端口，容器运行时需要暴露端口以便外部访问
 EXPOSE 80
