@@ -4,12 +4,12 @@ FROM python:3.9-slim
 # 使用 HTTPS 协议访问容器云调用证书安装
 RUN apt-get update && apt-get install -y ca-certificates
 
-# 选用国内镜像源以提高下载速度，替换 apt 源
-RUN sed -i 's/deb.debian.org/mirrors.tencent.com/g' /etc/apt/sources.list && \
+# 手动添加国内镜像源，确保 apt 可以使用
+RUN echo "deb http://mirrors.cloud.tencent.com/debian/ buster main" > /etc/apt/sources.list && \
+    echo "deb-src http://mirrors.cloud.tencent.com/debian/ buster main" >> /etc/apt/sources.list && \
     apt-get update && \
-    apt-get install -y --no-install-recommends \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends python3-pip && \
+    rm -rf /var/lib/apt/lists/*
 
 # 拷贝当前项目到 /app 目录下(.dockerignore 中文件除外)
 COPY . /app
