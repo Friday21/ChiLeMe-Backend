@@ -5,4 +5,5 @@ from .login import *
 from .friend_dinner import *
 from .dinner_likes import *
 from .friend import *
-from.user_note import *
+from .user_note import *
+from .user_note_history import *
