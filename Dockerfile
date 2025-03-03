@@ -30,4 +30,4 @@ RUN pip install /app/wxcloudrun/utils/azure_cognitiveservices_speech-1.42.0-py3-
 EXPOSE 80
 
 # 启动命令
-CMD ["gunicorn", "--bind", "0.0.0.0:80", "--workers", "4", "wxcloudrun.wsgi:application"]
+CMD ["/root/.local/bin/gunicorn", "--bind", "0.0.0.0:80", "--workers", "4", "wxcloudrun.wsgi:application"]
