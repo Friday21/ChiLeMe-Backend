@@ -21,7 +21,7 @@ class UserNotesView(View):
     def get(self, request, openId, *args, **kwargs):
         date_str = request.GET.get('date')
         if date_str:
-            date_ = datetime.strptime(Date_Format).date()
+            date_ = datetime.strptime(date_str, Date_Format).date()
         else:
             date_ = date.today()
         user_notes = UserNotes.objects.filter(user_openId=openId, date=date_).order_by('-createdAt').all()
