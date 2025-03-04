@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from django.db import models
 
@@ -40,4 +41,17 @@ class UserNotes(models.Model):
             "date": self.date.strftime("%Y-%m-%d"),
             "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
             "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
+        }
+
+    @classmethod
+    def to_fake_json(cls):
+        return {
+            "id": -1,
+            "userOpenId": "fake",
+            "text": "未识别语音",
+            "category": "",
+            "positive": 3,
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "createAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "updateAt": datetime.now().strftime("%Y-%m-%d %H:%M"),
         }

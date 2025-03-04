@@ -38,7 +38,12 @@ class UserNotesView(View):
         user_openId = body.get('user_openId')
         fileId = body.get('fileId')
         download_url = Users.get_url(fileId)
-        text = recognize_from_url(user_openId, download_url)
+        try:
+            text = recognize_from_url(user_openId, download_url)
+        except Exception as e:
+            print(e)
+            return JsonResponse(data={'code': 0, 'data': UserNotes.to_fake_json()})
+
         t2 = time()
         print('recognize from url to text cost: {} seconds'.format(t2 - t1))
         (category, positive) = chat_with_assistant(text)
