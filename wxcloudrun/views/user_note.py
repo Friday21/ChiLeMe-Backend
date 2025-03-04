@@ -36,13 +36,17 @@ class UserNotesView(View):
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
         user_openId = body.get('user_openId')
-        fileId = body.get('fileId')
-        download_url = Users.get_url(fileId)
-        try:
-            text = recognize_from_url(user_openId, download_url)
-        except Exception as e:
-            print(e)
-            return JsonResponse(data={'code': 0, 'data': UserNotes.to_fake_json()})
+        fileId = body.get('fileId', '')
+        text = body.get('text', '')
+        if not fileId and not text:
+            return JsonResponse(data={'code': 1, 'msg': '参数错误'})
+        if fileId:
+            download_url = Users.get_url(fileId)
+            try:
+                text = recognize_from_url(user_openId, download_url)
+            except Exception as e:
+                print(e)
+                return JsonResponse(data={'code': 0, 'data': UserNotes.to_fake_json()})
 
         t2 = time()
         print('recognize from url to text cost: {} seconds'.format(t2 - t1))
