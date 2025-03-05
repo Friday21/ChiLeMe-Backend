@@ -49,8 +49,8 @@ class UserNotesReportView(View):
         first_day_of_week = current_date - timedelta(days=current_date.weekday())  # 计算当前周的第一天
         first_day_of_month = current_date.replace(day=1)  # 计算当前月的第一天
 
-        for date_, categories in date_history.items():
-            if any(category > 3 for category in categories):  # 如果这一天有任意一个 category > 3，则算作“不虚度”
+        for date_, notes in date_history.items():
+            if any(note.positive > 3 for note in notes):  # 如果这一天有任意一个 positive > 3，则算作“不虚度”
                 if date_ >= first_day_of_week:
                     weekGoodDay += 1
                 if date_ >= first_day_of_month:
