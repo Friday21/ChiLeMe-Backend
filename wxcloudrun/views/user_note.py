@@ -52,11 +52,11 @@ class UserNotesView(View):
         print('recognize from url to text cost: {} seconds'.format(t2 - t1))
         try:
             (category, positive) = chat_with_assistant(text)
+            positive = int(positive)
         except Exception as e:
             print('chat_with_assistant error: {}'.format(e))
             (category, positive) = ('未识别', 3)
         print('chat_with_assistant cost: {} seconds'.format(time() - t2))
-        positive = int(positive)
         user_note = UserNotes(text=text, category=category, positive=positive, date=date.today(), user_openId=user_openId)
         user_note.save()
         return JsonResponse(data={'code': 0, 'data': user_note.to_json()})
