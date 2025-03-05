@@ -50,7 +50,11 @@ class UserNotesView(View):
 
         t2 = time()
         print('recognize from url to text cost: {} seconds'.format(t2 - t1))
-        (category, positive) = chat_with_assistant(text)
+        try:
+            (category, positive) = chat_with_assistant(text)
+        except Exception as e:
+            print('chat_with_assistant error: {}'.format(e))
+            (category, positive) = ('未识别', 3)
         print('chat_with_assistant cost: {} seconds'.format(time() - t2))
         positive = int(positive)
         user_note = UserNotes(text=text, category=category, positive=positive, date=date.today(), user_openId=user_openId)

@@ -7,3 +7,4 @@ from .dinner_likes import *
 from .friend import *
 from .user_note import *
 from .user_note_history import *
+from .user_note_report import *

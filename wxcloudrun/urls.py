@@ -15,7 +15,7 @@ Including another URLconf
 """
 
 from wxcloudrun.views import (counter, UserView, DinnerView, LoginView, FriendDinnerView, DinnerLikeView, FriendView,
-                              UserNotesView, UserNotesHistoryView)
+                              UserNotesView, UserNotesHistoryView, UserNotesReportView)
 from django.conf.urls import url
 
 urlpatterns = (
@@ -29,4 +29,5 @@ urlpatterns = (
     url(r'^^api/dinnersLikes(/)?$', DinnerLikeView.as_view()),
     url(r'^^api/usernotes/(?P<openId>[\w-]+)(/)?$', UserNotesView.as_view()),
     url(r'^^api/usernoteshistory/(?P<openId>[\w-]+)(/)?$', UserNotesHistoryView.as_view()),
+    url(r'^^api/usernotesreport/(?P<openId>[\w-]+)(/)?$', UserNotesReportView.as_view()),
 )
