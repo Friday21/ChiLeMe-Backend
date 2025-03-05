@@ -40,7 +40,7 @@ class UserNotesReportView(View):
         # 记录每天是否为“不虚度”
         date_history = defaultdict(list)
         for note in user_notes:
-            date_history[note.date].append(note.category)
+            date_history[note.date].append(note)
 
         # 统计不虚度的天数
         weekGoodDay = 0
