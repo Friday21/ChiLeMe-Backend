@@ -17,6 +17,17 @@ ASSISTANT_ID = "asst_E2lg4wmbBxAAuAjQG2bZ1xLw"  # 情绪分析助手
 
 
 def chat_with_assistant(user_input: str):
+    res = _chat_with_assistant(user_input)
+    if len(res) == 3:
+        return res
+    elif isinstance(res, list):
+        res = res[0].split('，')
+        return [res[0], res[1].strip(), ','.join(res[2:])]
+    else:
+        return ['未知分类', 3, '继续加油吧']
+
+
+def _chat_with_assistant(user_input: str):
     """
     使用 Azure OpenAI Assistant 进行对话
     :param user_input: 用户输入的文本
@@ -55,7 +66,8 @@ def chat_with_assistant(user_input: str):
 
 
 if __name__ == '__main__':
-    res = chat_with_assistant("和女朋友分手了")
+    res = chat_with_assistant("测试")
     print(res)
-    res = res.replace("(", "").replace(")", "").split(',')
-    print(res, res[0], res[1])
+    (category, positive, comment) = res
+    positive = int(positive.strip())
+    print(category, positive, comment)

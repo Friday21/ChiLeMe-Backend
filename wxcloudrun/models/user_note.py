@@ -20,6 +20,7 @@ class UserNotes(models.Model):
     text = models.CharField(max_length=1024, default="")
     category = models.CharField(max_length=256, default="")  # "体育;职场"
     positive = models.IntegerField(default=3)
+    comment = models.CharField(max_length=256, default="")
 
     date = models.DateField()
     createdAt = models.DateTimeField(auto_now_add=True)
@@ -39,6 +40,7 @@ class UserNotes(models.Model):
             "category": self.category.split(";"),
             "positive": self.positive,
             "date": self.date.strftime("%Y-%m-%d"),
+            "comment": self.comment,
             "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
             "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
         }
