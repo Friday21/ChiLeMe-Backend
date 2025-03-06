@@ -1,16 +1,10 @@
 import os
 from openai import AzureOpenAI
 
-# client = AzureOpenAI(
-#     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-#     api_version="2024-08-01-preview",
-#     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-#     )
-
 client = AzureOpenAI(
-    api_key="9f7e9e22baff4fafa6f117a9d749978d",
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
     api_version="2024-08-01-preview",
-    azure_endpoint="https://fridaygpt4o.openai.azure.com/"
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
     )
 
 ASSISTANT_ID = "asst_E2lg4wmbBxAAuAjQG2bZ1xLw"  # 情绪分析助手
