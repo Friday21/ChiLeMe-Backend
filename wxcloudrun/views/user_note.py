@@ -1,5 +1,5 @@
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from time import time
 
 from django.http import JsonResponse
@@ -23,7 +23,7 @@ class UserNotesView(View):
         if date_str:
             date_ = datetime.strptime(date_str, Date_Format).date()
         else:
-            date_ = date.today()
+            date_ = (datetime.now() + timedelta(hours=8)).date()
         user_notes = UserNotes.objects.filter(user_openId=openId, date=date_).order_by('-createdAt').all()
         result = [note.to_json() for note in user_notes]
 
@@ -57,7 +57,8 @@ class UserNotesView(View):
             print('chat_with_assistant error: {}'.format(e))
             (category, positive, comment) = ('未识别', 3, "继续加油")
         print('chat_with_assistant cost: {} seconds'.format(time() - t2))
-        user_note = UserNotes(text=text, category=category, positive=positive, date=date.today(),
+        _date = (datetime.now() + timedelta(hours=8)).date()
+        user_note = UserNotes(text=text, category=category, positive=positive, date=_date,
                               user_openId=user_openId, comment=comment)
         user_note.save()
         return JsonResponse(data={'code': 0, 'data': user_note.to_json()})
