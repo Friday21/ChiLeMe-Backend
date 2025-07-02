@@ -20,7 +20,7 @@ class UserNotesView(View):
 
     def get(self, request, openId, *args, **kwargs):
         date_str = request.GET.get('date')
-        if date_str:
+        if date_str and date_str != "undefined":
             date_ = datetime.strptime(date_str, Date_Format).date()
         else:
             date_ = (datetime.now() + timedelta(hours=8)).date()
