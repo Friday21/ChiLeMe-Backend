@@ -218,10 +218,7 @@ class AssetView(View):
         body['user_openId'] = openId
 
         # TODO 根据股票当前价格计算价值
-        try:
-            decimal.Decimal(str(body.get('value', 0)))
-        except:
-            body['value'] = 0
+        body['value'] = 0
         obj = Asset.objects.create(**body)
         return json_response(to_dict(obj))
 
@@ -229,12 +226,8 @@ class AssetView(View):
         body = get_body(request)
         
         # Validate value
-        if 'value' in body:
-            try:
-                decimal.Decimal(str(body.get('value')))
-            except:
-                body['value'] = 0
-                
+        body.pop('value', 0)
+        # TODO  根据股票当前价格计算价值
         Asset.objects.filter(pk=pk, user_openId=openId).update(**body)
         obj = Asset.objects.get(pk=pk)
         return json_response(to_dict(obj))
