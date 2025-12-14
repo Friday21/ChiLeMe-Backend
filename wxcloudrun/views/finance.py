@@ -154,19 +154,6 @@ class DashboardView(View):
             "incomePercent": income_percent,
             "expensePercent": expense_percent,
             "savingsProgress": 64, # Placeholder
-            "trendData": {
-                "categories": ["12月", "1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月"],
-                "series": [
-                    { "name": "预测净资产", "data": [123, 125, 128, 130, 133, 135, 138, 140, 143, 145, 148, 150] }
-                ]
-            },
-            "ringData": {
-                "series": [
-                    { "name": "现金", "data": float(cash_total) },
-                    { "name": "股票", "data": float(stock_total) },
-                    { "name": "房产", "data": float(house_total) }
-                ]
-            }
         }
         return json_response(data)
 
@@ -229,6 +216,12 @@ class AssetView(View):
         body = get_body(request)
         if 'id' in body: del body['id']
         body['user_openId'] = openId
+
+        # TODO 根据股票当前价格计算价值
+        try:
+            decimal.Decimal(str(body.get('value', 0)))
+        except:
+            body['value'] = 0
         obj = Asset.objects.create(**body)
         return json_response(to_dict(obj))
 
@@ -281,18 +274,33 @@ class FutureItemView(View):
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
-class LoanView(View):
+class AssetView(View):
     def post(self, request, openId, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
         body['user_openId'] = openId
-        obj = Loan.objects.create(**body)
+        
+        # Validate value
+        try:
+            decimal.Decimal(str(body.get('value', 0)))
+        except:
+            body['value'] = 0
+            
+        obj = Asset.objects.create(**body)
         return json_response(to_dict(obj))
 
     def put(self, request, pk, openId, *args, **kwargs):
         body = get_body(request)
-        Loan.objects.filter(pk=pk, user_openId=openId).update(**body)
-        obj = Loan.objects.get(pk=pk)
+        
+        # Validate value
+        if 'value' in body:
+            try:
+                decimal.Decimal(str(body.get('value')))
+            except:
+                body['value'] = 0
+                
+        Asset.objects.filter(pk=pk, user_openId=openId).update(**body)
+        obj = Asset.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
     def delete(self, request, pk, openId, *args, **kwargs):
