@@ -16,6 +16,8 @@ Including another URLconf
 
 from wxcloudrun.views import (counter, UserView, DinnerView, LoginView, FriendDinnerView, DinnerLikeView, FriendView,
                               UserNotesView, UserNotesHistoryView, UserNotesReportView)
+from wxcloudrun.views.finance import (DashboardView, TransactionView, PlanningView, AssetView, 
+                                      FixedItemView, FutureItemView, LoanView, ProfileView, AssetCorrectionView)
 from django.conf.urls import url
 
 urlpatterns = (
@@ -30,4 +32,18 @@ urlpatterns = (
     url(r'^^api/usernotes/(?P<openId>[\w-]+)(/)?$', UserNotesView.as_view()),
     url(r'^^api/usernoteshistory/(?P<openId>[\w-]+)(/)?$', UserNotesHistoryView.as_view()),
     url(r'^^api/usernotesreport/(?P<openId>[\w-]+)(/)?$', UserNotesReportView.as_view()),
+    url(r'^^api/dashboard/summary(/)?$', DashboardView.as_view()),
+    url(r'^^api/transactions(/)?$', TransactionView.as_view()),
+    url(r'^^api/transactions/(?P<pk>\d+)(/)?$', TransactionView.as_view()),
+    url(r'^^api/planning/summary(/)?$', PlanningView.as_view()),
+    url(r'^^api/assets(/)?$', AssetView.as_view()),
+    url(r'^^api/assets/(?P<pk>\d+)(/)?$', AssetView.as_view()),
+    url(r'^^api/fixed-items(/)?$', FixedItemView.as_view()),
+    url(r'^^api/fixed-items/(?P<pk>\d+)(/)?$', FixedItemView.as_view()),
+    url(r'^^api/future-items(/)?$', FutureItemView.as_view()),
+    url(r'^^api/future-items/(?P<pk>\d+)(/)?$', FutureItemView.as_view()),
+    url(r'^^api/loans(/)?$', LoanView.as_view()),
+    url(r'^^api/loans/(?P<pk>\d+)(/)?$', LoanView.as_view()),
+    url(r'^^api/profile(/)?$', ProfileView.as_view()),
+    url(r'^^api/assets/correction(/)?$', AssetCorrectionView.as_view()),
 )
