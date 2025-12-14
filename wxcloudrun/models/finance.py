@@ -106,3 +106,14 @@ class AssetCorrection(models.Model):
 
     class Meta:
         db_table = 'finance_asset_correction'
+
+class StockPrice(models.Model):
+    stock_code = models.CharField(max_length=20)
+    price = models.DecimalField(max_digits=20, decimal_places=2)
+    date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'finance_stock_price'
+        unique_together = ('stock_code', 'date')

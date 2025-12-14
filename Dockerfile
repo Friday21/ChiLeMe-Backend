@@ -8,7 +8,7 @@ RUN echo "deb http://deb.debian.org/debian bookworm main contrib non-free" > /et
     apt-get update
 
 # 安装 ffmpeg 及其他必要依赖
-RUN apt-get install -y --no-install-recommends ffmpeg ca-certificates python3-pip && \
+RUN apt-get install -y --no-install-recommends ffmpeg ca-certificates python3-pip cron && \
     rm -rf /var/lib/apt/lists/*
 
 # 拷贝当前项目到 /app 目录
@@ -26,8 +26,17 @@ RUN pip config set global.index-url http://mirrors.cloud.tencent.com/pypi/simple
 # 安装适用于 x86_64 的 Azure 认知服务语音库
 RUN pip install /app/wxcloudrun/utils/azure_cognitiveservices_speech-1.42.0-py3-none-manylinux1_x86_64.whl
 
+# Setup Cron
+COPY crontab /etc/cron.d/stock-cron
+RUN chmod 0644 /etc/cron.d/stock-cron
+RUN crontab /etc/cron.d/stock-cron
+RUN touch /var/log/stock_update.log
+
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 # 暴露端口
 EXPOSE 80
 
 # 启动命令
-CMD ["/root/.local/bin/gunicorn", "--bind", "0.0.0.0:80", "--workers", "4", "wxcloudrun.wsgi:application"]
+CMD ["/start.sh"]

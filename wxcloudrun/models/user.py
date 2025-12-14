@@ -12,6 +12,7 @@ class Users(models.Model):
     avatar_url = models.CharField(max_length=256, default="")
     phone = models.CharField(max_length=32, default="")
     friends = models.TextField(default="[]")
+    count_house = models.BooleanField(default=True)
 
     createdAt = models.DateTimeField(default=datetime.now(), )
     updatedAt = models.DateTimeField(default=datetime.now(),)
@@ -51,6 +52,7 @@ class Users(models.Model):
             "friends": json.loads(self.friends),
             "createAt": self.createdAt.strftime("%Y-%m-%d %H:%M"),
             "updateAt": self.updatedAt.strftime("%Y-%m-%d %H:%M"),
+            "count_house": self.count_house,
         }
 
     def add_friend(self, user):
