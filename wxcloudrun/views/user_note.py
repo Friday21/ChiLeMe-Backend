@@ -20,7 +20,7 @@ class UserNotesView(View):
 
     def get(self, request, openId, *args, **kwargs):
         date_str = request.GET.get('date')
-        if date_str:
+        if date_str and date_str != "undefined":
             date_ = datetime.strptime(date_str, Date_Format).date()
         else:
             date_ = (datetime.now() + timedelta(hours=8)).date()
@@ -49,14 +49,14 @@ class UserNotesView(View):
                 return JsonResponse(data={'code': 0, 'data': UserNotes.to_fake_json()})
 
         t2 = time()
-        print('recognize from url to text cost: {} seconds'.format(t2 - t1))
+        print('recognize from url to text cost: {} seconds'.format(int(t2 - t1)))
         try:
             (category, positive, comment) = chat_with_assistant(text)
             positive = int(positive.strip())
         except Exception as e:
             print('chat_with_assistant error: {}'.format(e))
             (category, positive, comment) = ('未识别', 3, "继续加油")
-        print('chat_with_assistant cost: {} seconds'.format(time() - t2))
+        print('chat_with_assistant cost: {} seconds'.format(int(time() - t2)))
         _date = (datetime.now() + timedelta(hours=8)).date()
         user_note = UserNotes(text=text, category=category, positive=positive, date=_date,
                               user_openId=user_openId, comment=comment)
