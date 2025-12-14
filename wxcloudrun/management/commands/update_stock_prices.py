@@ -1,6 +1,7 @@
 import datetime
 import logging
 import decimal
+import time
 import yfinance as yf
 from django.core.management.base import BaseCommand
 from wxcloudrun.models import Asset, StockPrice
@@ -22,16 +23,20 @@ class Command(BaseCommand):
             return
 
         # 2. Fetch Exchange Rates
+        usd_cny = 7.2
+        hkd_cny = 0.92
         try:
-            usd_cny = yf.Ticker("CNY=X").history(period="1d")['Close'].iloc[-1]
-            hkd_cny = yf.Ticker("HKDCNY=X").history(period="1d")['Close'].iloc[-1]
+            usd_hist = yf.Ticker("CNY=X").history(period="1d")
+            if not usd_hist.empty:
+                usd_cny = usd_hist['Close'].iloc[-1]
+            
+            hkd_hist = yf.Ticker("HKDCNY=X").history(period="1d")
+            if not hkd_hist.empty:
+                hkd_cny = hkd_hist['Close'].iloc[-1]
+                
             logger.info(f"Exchange Rates - USD/CNY: {usd_cny}, HKD/CNY: {hkd_cny}")
         except Exception as e:
             logger.error(f"Failed to fetch exchange rates: {e}")
-            # Fallback or exit? Let's set defaults or exit. 
-            # Better to exit or use approximate if critical, but for now let's log and maybe fail for those needing conversion.
-            usd_cny = 7.2
-            hkd_cny = 0.92
 
         today = datetime.date.today()
 
@@ -47,6 +52,7 @@ class Command(BaseCommand):
             suffixes = ['', '.HK', '.SS', '.SZ']
             
             for suffix in suffixes:
+                time.sleep(1) # Avoid rate limiting
                 try:
                     symbol = f"{code}{suffix}"
                     # Optimization: Check if it looks like a code for a specific market to avoid unnecessary requests
