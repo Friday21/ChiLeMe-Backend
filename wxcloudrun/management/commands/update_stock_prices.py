@@ -2,7 +2,8 @@ import datetime
 import logging
 import decimal
 import time
-import yfinance as yf
+import akshare as ak
+import pandas as pd
 from django.core.management.base import BaseCommand
 from wxcloudrun.models import Asset, StockPrice
 
@@ -12,7 +13,7 @@ class Command(BaseCommand):
     help = 'Update stock prices from yfinance'
 
     def handle(self, *args, **options):
-        logger.info('Starting stock price update...')
+        logger.info('Starting stock price update (akshare)...')
         
         # 1. Get unique stock codes
         stock_codes = Asset.objects.filter(type='stock').values_list('stock_code', flat=True).distinct()
@@ -22,82 +23,82 @@ class Command(BaseCommand):
             logger.info('No stock codes found.')
             return
 
+        today = datetime.date.today()
+        start_date = (today - datetime.timedelta(days=5)).strftime("%Y%m%d")
+        end_date = today.strftime("%Y%m%d")
+
         # 2. Fetch Exchange Rates
         usd_cny = 7.2
         hkd_cny = 0.92
         try:
-            usd_hist = yf.Ticker("CNY=X").history(period="1d")
-            if not usd_hist.empty:
-                usd_cny = usd_hist['Close'].iloc[-1]
+            # currency_boc_sina: symbol="美元"
+            # Returns DataFrame with columns like "日期", "中行汇买价", ...
+            # We use "中行折算价" (Conversion Rate) which is usually per 100 units
+            usd_df = ak.currency_boc_sina(symbol="美元", start_date=start_date, end_date=end_date)
+            if not usd_df.empty and '中行折算价' in usd_df.columns:
+                usd_cny = float(usd_df['中行折算价'].iloc[-1]) / 100
             
-            hkd_hist = yf.Ticker("HKDCNY=X").history(period="1d")
-            if not hkd_hist.empty:
-                hkd_cny = hkd_hist['Close'].iloc[-1]
+            hkd_df = ak.currency_boc_sina(symbol="港币", start_date=start_date, end_date=end_date)
+            if not hkd_df.empty and '中行折算价' in hkd_df.columns:
+                hkd_cny = float(hkd_df['中行折算价'].iloc[-1]) / 100
                 
             logger.info(f"Exchange Rates - USD/CNY: {usd_cny}, HKD/CNY: {hkd_cny}")
         except Exception as e:
             logger.error(f"Failed to fetch exchange rates: {e}")
 
-        today = datetime.date.today()
-
         for code in stock_codes:
             logger.info(f"Processing stock code: {code}")
             
-            ticker = None
             price = None
             currency = 'CNY'
             
-            # Try different suffixes
-            # Priority: US (no suffix) -> HK (.HK) -> A-Share (.SS, .SZ)
-            suffixes = ['', '.HK', '.SS', '.SZ']
+            # Strategy: Try A-share -> HK -> US
             
-            for suffix in suffixes:
-                time.sleep(1) # Avoid rate limiting
+            # 1. Try A-Share (6 digits)
+            if code.isdigit() and len(code) == 6:
                 try:
-                    symbol = f"{code}{suffix}"
-                    # Optimization: Check if it looks like a code for a specific market to avoid unnecessary requests
-                    # E.g. 0700 is likely HK, 600xxx is likely SS. But user asked to try in order.
-                    
-                    t = yf.Ticker(symbol)
-                    # fast_info is faster than info
-                    # history(period='1d') is reliable
-                    hist = t.history(period="1d")
-                    
-                    if not hist.empty:
-                        price = hist['Close'].iloc[-1]
-                        # Get currency
-                        # info might be slow, but needed for currency. 
-                        # Alternatively, guess based on suffix.
-                        if suffix == '':
-                            currency = 'USD' # Assumption for US
-                            # Double check if it's actually found and valid
-                            # Sometimes yfinance returns data for invalid symbols? No, usually empty history.
-                        elif suffix == '.HK':
-                            currency = 'HKD'
-                        elif suffix in ['.SS', '.SZ']:
-                            currency = 'CNY'
-                            
-                        # Try to get actual currency from metadata if possible, but history doesn't have it.
-                        # t.fast_info['currency'] is available in newer yfinance
-                        try:
-                            if hasattr(t, 'fast_info') and t.fast_info.currency:
-                                currency = t.fast_info.currency
-                        except:
-                            pass
-                            
-                        logger.info(f"Found {symbol}: Price {price} {currency}")
-                        break
+                    df = ak.stock_zh_a_hist(symbol=code, period="daily", start_date=start_date, end_date=end_date, adjust="qfq")
+                    if not df.empty:
+                        price = df['收盘'].iloc[-1]
+                        currency = 'CNY'
+                        logger.info(f"Found A-Share {code}: {price}")
                 except Exception as e:
-                    logger.warning(f"Error fetching {code}{suffix}: {e}")
-                    continue
+                    logger.warning(f"A-Share check failed for {code}: {e}")
+            
+            # 2. Try HK Share (5 digits)
+            if not price and code.isdigit() and len(code) == 5:
+                try:
+                    df = ak.stock_hk_hist(symbol=code, period="daily", start_date=start_date, end_date=end_date, adjust="qfq")
+                    if not df.empty:
+                        price = df['收盘'].iloc[-1]
+                        currency = 'HKD'
+                        logger.info(f"Found HK-Share {code}: {price}")
+                except Exception as e:
+                    logger.warning(f"HK-Share check failed for {code}: {e}")
+
+            # 3. Try US Share (Letters or other formats)
+            if not price:
+                # Try prefixes for EastMoney: 105 (Nasdaq), 106 (NYSE), 107 (Amex)
+                prefixes = ["105.", "106.", "107."]
+                for prefix in prefixes:
+                    try:
+                        symbol = f"{prefix}{code}"
+                        df = ak.stock_us_hist(symbol=symbol, period="daily", start_date=start_date, end_date=end_date, adjust="qfq")
+                        if not df.empty:
+                            price = df['收盘'].iloc[-1]
+                            currency = 'USD'
+                            logger.info(f"Found US-Share {symbol}: {price}")
+                            break
+                    except:
+                        continue
             
             if price is not None:
                 # Convert to CNY
-                price_cny = price
+                price_cny = float(price)
                 if currency == 'USD':
-                    price_cny = price * usd_cny
+                    price_cny = price_cny * usd_cny
                 elif currency == 'HKD':
-                    price_cny = price * hkd_cny
+                    price_cny = price_cny * hkd_cny
                 
                 # Save to DB
                 StockPrice.objects.update_or_create(
