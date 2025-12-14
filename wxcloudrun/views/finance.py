@@ -7,6 +7,7 @@ from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.forms.models import model_to_dict
+from django.db.models import Sum
 from wxcloudrun.models import Transaction, Asset, FixedItem, FutureItem, Loan, AssetCorrection
 
 logger = logging.getLogger('log')
@@ -34,20 +35,24 @@ def get_body(request):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class DashboardView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, openId, *args, **kwargs):
+        # Helper to get sum safely
+        def get_sum(qs, field='value'):
+            return qs.aggregate(total=Sum(field))['total'] or 0
+
         # 1. Calculate Assets
-        assets = Asset.objects.all()
+        assets = Asset.objects.filter(user_openId=openId)
         cash_assets = assets.filter(type='cash')
         stock_assets = assets.filter(type='stock')
         house_assets = assets.filter(type='house')
         
-        cash_total = sum(a.value for a in cash_assets)
-        stock_total = sum(a.value for a in stock_assets)
-        house_total = sum(a.value for a in house_assets)
+        cash_total = get_sum(cash_assets)
+        stock_total = get_sum(stock_assets)
+        house_total = get_sum(house_assets)
         
         # 2. Calculate Liabilities (Loans)
-        loans = Loan.objects.all()
-        loan_total = sum(l.principal for l in loans)
+        loans = Loan.objects.filter(user_openId=openId)
+        loan_total = get_sum(loans, 'principal')
         
         # 3. Net Worth
         total_assets = cash_total + stock_total + house_total
@@ -64,7 +69,7 @@ class DashboardView(View):
         asset_items.append({
             "id": 1,
             "name": '流动资金',
-            "subtitle": '、'.join([a.name for a in cash_assets][:2]) if cash_assets else '暂无',
+            "subtitle": '、'.join([a.name for a in cash_assets][:2]) if cash_assets.exists() else '暂无',
             "amount": fmt(cash_total),
             "updateDate": datetime.date.today().strftime('%m月%d日 更新'),
             "isNegative": False,
@@ -122,10 +127,10 @@ class DashboardView(View):
 
         # 5. Monthly Data (Current Month)
         now = datetime.datetime.now()
-        transactions = Transaction.objects.filter(date__year=now.year, date__month=now.month)
+        transactions = Transaction.objects.filter(user_openId=openId, date__year=now.year, date__month=now.month)
         
-        monthly_income = sum(t.amount for t in transactions if t.type == 'income')
-        monthly_expense = sum(t.amount for t in transactions if t.type == 'expense')
+        monthly_income = get_sum(transactions.filter(type='income'), 'amount')
+        monthly_expense = get_sum(transactions.filter(type='expense'), 'amount')
         monthly_balance = monthly_income - monthly_expense
         
         income_percent = 0
@@ -167,12 +172,12 @@ class DashboardView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TransactionView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, openId, *args, **kwargs):
         month = request.GET.get('month')
         type_ = request.GET.get('type')
         category = request.GET.get('category')
         
-        qs = Transaction.objects.all().order_by('-date')
+        qs = Transaction.objects.filter(user_openId=openId).order_by('-date')
         if month:
             qs = qs.filter(date__startswith=month)
         if type_:
@@ -183,31 +188,32 @@ class TransactionView(View):
         data = [to_dict(t) for t in qs]
         return json_response(data)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, openId, *args, **kwargs):
         body = get_body(request)
         # Remove id if present
         if 'id' in body:
             del body['id']
+        body['user_openId'] = openId
         t = Transaction.objects.create(**body)
         return json_response(to_dict(t))
 
-    def put(self, request, pk, *args, **kwargs):
+    def put(self, request, pk, openId, *args, **kwargs):
         body = get_body(request)
-        Transaction.objects.filter(pk=pk).update(**body)
+        Transaction.objects.filter(pk=pk, user_openId=openId).update(**body)
         t = Transaction.objects.get(pk=pk)
         return json_response(to_dict(t))
 
-    def delete(self, request, pk, *args, **kwargs):
-        Transaction.objects.filter(pk=pk).delete()
+    def delete(self, request, pk, openId, *args, **kwargs):
+        Transaction.objects.filter(pk=pk, user_openId=openId).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PlanningView(View):
-    def get(self, request, *args, **kwargs):
-        assets = [to_dict(a) for a in Asset.objects.all()]
-        fixed = [to_dict(f) for f in FixedItem.objects.all()]
-        future = [to_dict(f) for f in FutureItem.objects.all()]
-        loans = [to_dict(l) for l in Loan.objects.all()]
+    def get(self, request, openId, *args, **kwargs):
+        assets = [to_dict(a) for a in Asset.objects.filter(user_openId=openId)]
+        fixed = [to_dict(f) for f in FixedItem.objects.filter(user_openId=openId)]
+        future = [to_dict(f) for f in FutureItem.objects.filter(user_openId=openId)]
+        loans = [to_dict(l) for l in Loan.objects.filter(user_openId=openId)]
         
         data = {
             "assets": assets,
@@ -219,79 +225,83 @@ class PlanningView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AssetView(View):
-    def post(self, request, *args, **kwargs):
+    def post(self, request, openId, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
+        body['user_openId'] = openId
         obj = Asset.objects.create(**body)
         return json_response(to_dict(obj))
 
-    def put(self, request, pk, *args, **kwargs):
+    def put(self, request, pk, openId, *args, **kwargs):
         body = get_body(request)
-        Asset.objects.filter(pk=pk).update(**body)
+        Asset.objects.filter(pk=pk, user_openId=openId).update(**body)
         obj = Asset.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
-    def delete(self, request, pk, *args, **kwargs):
-        Asset.objects.filter(pk=pk).delete()
+    def delete(self, request, pk, openId, *args, **kwargs):
+        Asset.objects.filter(pk=pk, user_openId=openId).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class FixedItemView(View):
-    def post(self, request, *args, **kwargs):
+    def post(self, request, openId, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
+        body['user_openId'] = openId
         obj = FixedItem.objects.create(**body)
         return json_response(to_dict(obj))
 
-    def put(self, request, pk, *args, **kwargs):
+    def put(self, request, pk, openId, *args, **kwargs):
         body = get_body(request)
-        FixedItem.objects.filter(pk=pk).update(**body)
+        FixedItem.objects.filter(pk=pk, user_openId=openId).update(**body)
         obj = FixedItem.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
-    def delete(self, request, pk, *args, **kwargs):
-        FixedItem.objects.filter(pk=pk).delete()
+    def delete(self, request, pk, openId, *args, **kwargs):
+        FixedItem.objects.filter(pk=pk, user_openId=openId).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class FutureItemView(View):
-    def post(self, request, *args, **kwargs):
+    def post(self, request, openId, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
+        body['user_openId'] = openId
         obj = FutureItem.objects.create(**body)
         return json_response(to_dict(obj))
 
-    def put(self, request, pk, *args, **kwargs):
+    def put(self, request, pk, openId, *args, **kwargs):
         body = get_body(request)
-        FutureItem.objects.filter(pk=pk).update(**body)
+        FutureItem.objects.filter(pk=pk, user_openId=openId).update(**body)
         obj = FutureItem.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
-    def delete(self, request, pk, *args, **kwargs):
-        FutureItem.objects.filter(pk=pk).delete()
+    def delete(self, request, pk, openId, *args, **kwargs):
+        FutureItem.objects.filter(pk=pk, user_openId=openId).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoanView(View):
-    def post(self, request, *args, **kwargs):
+    def post(self, request, openId, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
+        body['user_openId'] = openId
         obj = Loan.objects.create(**body)
         return json_response(to_dict(obj))
 
-    def put(self, request, pk, *args, **kwargs):
+    def put(self, request, pk, openId, *args, **kwargs):
         body = get_body(request)
-        Loan.objects.filter(pk=pk).update(**body)
+        Loan.objects.filter(pk=pk, user_openId=openId).update(**body)
         obj = Loan.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
-    def delete(self, request, pk, *args, **kwargs):
-        Loan.objects.filter(pk=pk).delete()
+    def delete(self, request, pk, openId, *args, **kwargs):
+        Loan.objects.filter(pk=pk, user_openId=openId).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ProfileView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, openId, *args, **kwargs):
         # Mock profile data
         data = {
             "userInfo": {
@@ -313,9 +323,9 @@ class ProfileView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AssetCorrectionView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, openId, *args, **kwargs):
         # Get latest correction or calculate
-        last = AssetCorrection.objects.last()
+        last = AssetCorrection.objects.filter(user_openId=openId).last()
         data = {
             "cashSystem": 50000, # Mock
             "stockSystem": 200000 # Mock
@@ -326,7 +336,8 @@ class AssetCorrectionView(View):
             
         return json_response(data)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, openId, *args, **kwargs):
         body = get_body(request)
+        body['user_openId'] = openId
         obj = AssetCorrection.objects.create(**body)
         return json_response(to_dict(obj))

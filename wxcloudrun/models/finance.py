@@ -5,6 +5,7 @@ class Transaction(models.Model):
         ('income', 'Income'),
         ('expense', 'Expense'),
     )
+    user_openId = models.CharField(max_length=255, default='')
     type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     category = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
@@ -25,6 +26,7 @@ class Asset(models.Model):
         ('stock', 'Stock'),
         ('house', 'House'),
     )
+    user_openId = models.CharField(max_length=255, default='')
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=10, choices=ASSET_TYPES)
     value = models.DecimalField(max_digits=20, decimal_places=2)
@@ -42,6 +44,7 @@ class FixedItem(models.Model):
         ('income', 'Income'),
         ('expense', 'Expense'),
     )
+    user_openId = models.CharField(max_length=255, default='')
     type = models.CharField(max_length=10, choices=ITEM_TYPES)
     name = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
@@ -60,6 +63,7 @@ class FutureItem(models.Model):
         ('cash', 'Cash'),
         ('stock', 'Stock'),
     )
+    user_openId = models.CharField(max_length=255, default='')
     type = models.CharField(max_length=10, choices=ITEM_TYPES)
     text = models.CharField(max_length=200)
     amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -79,6 +83,7 @@ class Loan(models.Model):
         ('equal_principal', 'Equal Principal'),
         ('equal_principal_interest', 'Equal Principal and Interest'),
     )
+    user_openId = models.CharField(max_length=255, default='')
     name = models.CharField(max_length=100)
     principal = models.DecimalField(max_digits=20, decimal_places=2)
     periods = models.IntegerField()
@@ -92,6 +97,7 @@ class Loan(models.Model):
         db_table = 'finance_loan'
 
 class AssetCorrection(models.Model):
+    user_openId = models.CharField(max_length=255, default='')
     cash_actual = models.DecimalField(max_digits=20, decimal_places=2)
     stock_actual = models.DecimalField(max_digits=20, decimal_places=2)
     note = models.TextField(blank=True, null=True)
