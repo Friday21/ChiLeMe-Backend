@@ -1,5 +1,6 @@
 import datetime
 import logging
+import decimal
 import yfinance as yf
 from django.core.management.base import BaseCommand
 from wxcloudrun.models import Asset, StockPrice
@@ -99,6 +100,15 @@ class Command(BaseCommand):
                     defaults={'price': price_cny}
                 )
                 logger.info(f"Saved {code}: {price_cny} CNY")
+
+                # Update Assets
+                assets = Asset.objects.filter(stock_code=code, type='stock')
+                for asset in assets:
+                    if asset.shares:
+                        # Ensure price_cny is Decimal for calculation
+                        asset.value = asset.shares * decimal.Decimal(str(price_cny))
+                        asset.save()
+                        logger.info(f"Updated Asset {asset.id} value to {asset.value}")
             else:
                 logger.warning(f"Could not find price for {code}")
 
