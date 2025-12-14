@@ -34,7 +34,7 @@ def get_body(request):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class DashboardView(View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         # 1. Calculate Assets
         assets = Asset.objects.all()
         cash_assets = assets.filter(type='cash')
@@ -167,7 +167,7 @@ class DashboardView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TransactionView(View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         month = request.GET.get('month')
         type_ = request.GET.get('type')
         category = request.GET.get('category')
@@ -183,7 +183,7 @@ class TransactionView(View):
         data = [to_dict(t) for t in qs]
         return json_response(data)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         body = get_body(request)
         # Remove id if present
         if 'id' in body:
@@ -191,19 +191,19 @@ class TransactionView(View):
         t = Transaction.objects.create(**body)
         return json_response(to_dict(t))
 
-    def put(self, request, pk):
+    def put(self, request, pk, *args, **kwargs):
         body = get_body(request)
         Transaction.objects.filter(pk=pk).update(**body)
         t = Transaction.objects.get(pk=pk)
         return json_response(to_dict(t))
 
-    def delete(self, request, pk):
+    def delete(self, request, pk, *args, **kwargs):
         Transaction.objects.filter(pk=pk).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PlanningView(View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         assets = [to_dict(a) for a in Asset.objects.all()]
         fixed = [to_dict(f) for f in FixedItem.objects.all()]
         future = [to_dict(f) for f in FutureItem.objects.all()]
@@ -219,79 +219,79 @@ class PlanningView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AssetView(View):
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
         obj = Asset.objects.create(**body)
         return json_response(to_dict(obj))
 
-    def put(self, request, pk):
+    def put(self, request, pk, *args, **kwargs):
         body = get_body(request)
         Asset.objects.filter(pk=pk).update(**body)
         obj = Asset.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
-    def delete(self, request, pk):
+    def delete(self, request, pk, *args, **kwargs):
         Asset.objects.filter(pk=pk).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class FixedItemView(View):
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
         obj = FixedItem.objects.create(**body)
         return json_response(to_dict(obj))
 
-    def put(self, request, pk):
+    def put(self, request, pk, *args, **kwargs):
         body = get_body(request)
         FixedItem.objects.filter(pk=pk).update(**body)
         obj = FixedItem.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
-    def delete(self, request, pk):
+    def delete(self, request, pk, *args, **kwargs):
         FixedItem.objects.filter(pk=pk).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class FutureItemView(View):
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
         obj = FutureItem.objects.create(**body)
         return json_response(to_dict(obj))
 
-    def put(self, request, pk):
+    def put(self, request, pk, *args, **kwargs):
         body = get_body(request)
         FutureItem.objects.filter(pk=pk).update(**body)
         obj = FutureItem.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
-    def delete(self, request, pk):
+    def delete(self, request, pk, *args, **kwargs):
         FutureItem.objects.filter(pk=pk).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoanView(View):
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
         obj = Loan.objects.create(**body)
         return json_response(to_dict(obj))
 
-    def put(self, request, pk):
+    def put(self, request, pk, *args, **kwargs):
         body = get_body(request)
         Loan.objects.filter(pk=pk).update(**body)
         obj = Loan.objects.get(pk=pk)
         return json_response(to_dict(obj))
 
-    def delete(self, request, pk):
+    def delete(self, request, pk, *args, **kwargs):
         Loan.objects.filter(pk=pk).delete()
         return json_response({'success': True})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ProfileView(View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         # Mock profile data
         data = {
             "userInfo": {
@@ -313,7 +313,7 @@ class ProfileView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AssetCorrectionView(View):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         # Get latest correction or calculate
         last = AssetCorrection.objects.last()
         data = {
@@ -326,7 +326,7 @@ class AssetCorrectionView(View):
             
         return json_response(data)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         body = get_body(request)
         obj = AssetCorrection.objects.create(**body)
         return json_response(to_dict(obj))
