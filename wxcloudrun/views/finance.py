@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.forms.models import model_to_dict
 from django.db.models import Sum
-from wxcloudrun.models import Transaction, Asset, FixedItem, FutureItem, Loan, AssetCorrection
+from wxcloudrun.models import Transaction, Asset, FixedItem, FutureItem, Loan, AssetCorrection, StockPrice
 
 logger = logging.getLogger('log')
 
@@ -211,25 +211,64 @@ class PlanningView(View):
         return json_response(data)
 
 @method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
 class AssetView(View):
     def post(self, request, openId, *args, **kwargs):
         body = get_body(request)
         if 'id' in body: del body['id']
         body['user_openId'] = openId
-
-        # TODO 根据股票当前价格计算价值
-        if body['type'] == 'stock':
+        
+        # Auto-calculate stock value
+        if body.get('type') == 'stock' and body.get('stock_code') and body.get('shares'):
+            try:
+                shares = decimal.Decimal(str(body['shares']))
+                latest = StockPrice.objects.filter(stock_code=body['stock_code']).order_by('-date').first()
+                if latest:
+                    body['value'] = shares * latest.price
+                else:
+                    body['value'] = 0
+            except:
+                body['value'] = 0
+        
+        # Validate value
+        try:
+            decimal.Decimal(str(body.get('value', 0)))
+        except:
             body['value'] = 0
+            
         obj = Asset.objects.create(**body)
         return json_response(to_dict(obj))
 
     def put(self, request, pk, openId, *args, **kwargs):
         body = get_body(request)
         
+        # Check if we need to recalculate stock value
+        try:
+            asset = Asset.objects.get(pk=pk, user_openId=openId)
+            new_type = body.get('type', asset.type)
+            new_stock_code = body.get('stock_code', asset.stock_code)
+            new_shares = body.get('shares', asset.shares)
+            
+            if new_type == 'stock' and new_stock_code and new_shares:
+                try:
+                    shares = decimal.Decimal(str(new_shares))
+                    latest = StockPrice.objects.filter(stock_code=new_stock_code).order_by('-date').first()
+                    if latest:
+                        body['value'] = shares * latest.price
+                    else:
+                        body['value'] = 0
+                except:
+                    body['value'] = 0
+        except:
+            pass
+        
         # Validate value
-        if body['type'] == 'stock':
-            body.pop('value', 0)
-        # TODO  根据股票当前价格计算价值
+        if 'value' in body:
+            try:
+                decimal.Decimal(str(body.get('value')))
+            except:
+                body['value'] = 0
+                
         Asset.objects.filter(pk=pk, user_openId=openId).update(**body)
         obj = Asset.objects.get(pk=pk)
         return json_response(to_dict(obj))
@@ -263,11 +302,45 @@ class FutureItemView(View):
         body = get_body(request)
         if 'id' in body: del body['id']
         body['user_openId'] = openId
+        
+        # Auto-calculate stock value
+        if body.get('type') == 'stock' and body.get('stock_code') and body.get('shares'):
+            try:
+                shares = decimal.Decimal(str(body['shares']))
+                latest = StockPrice.objects.filter(stock_code=body['stock_code']).order_by('-date').first()
+                if latest:
+                    body['amount'] = shares * latest.price
+                else:
+                    body['amount'] = 0
+            except:
+                body['amount'] = 0
+                
         obj = FutureItem.objects.create(**body)
         return json_response(to_dict(obj))
 
     def put(self, request, pk, openId, *args, **kwargs):
         body = get_body(request)
+        
+        # Check if we need to recalculate stock value
+        try:
+            item = FutureItem.objects.get(pk=pk, user_openId=openId)
+            new_type = body.get('type', item.type)
+            new_stock_code = body.get('stock_code', item.stock_code)
+            new_shares = body.get('shares', item.shares)
+            
+            if new_type == 'stock' and new_stock_code and new_shares:
+                try:
+                    shares = decimal.Decimal(str(new_shares))
+                    latest = StockPrice.objects.filter(stock_code=new_stock_code).order_by('-date').first()
+                    if latest:
+                        body['amount'] = shares * latest.price
+                    else:
+                        body['amount'] = 0
+                except:
+                    body['amount'] = 0
+        except:
+            pass
+            
         FutureItem.objects.filter(pk=pk, user_openId=openId).update(**body)
         obj = FutureItem.objects.get(pk=pk)
         return json_response(to_dict(obj))
