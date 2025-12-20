@@ -1,2 +1,3 @@
 # Run at every hour
-10 * * * * cd /app && /usr/local/bin/python manage.py update_stock_prices >> /var/log/stock_update.log 2>&1
+10 * * * * /app/run_update_stock.sh
+#10 * * * * cd /app && /usr/local/bin/python manage.py update_stock_prices >> /var/log/stock_update.log 2>&1
