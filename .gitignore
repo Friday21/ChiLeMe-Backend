@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 .idea
+run_update_stock.sh

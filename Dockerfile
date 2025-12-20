@@ -8,7 +8,7 @@ RUN echo "deb http://deb.debian.org/debian bookworm main contrib non-free" > /et
     apt-get update
 
 # 安装 ffmpeg 及其他必要依赖
-RUN apt-get install -y --no-install-recommends ffmpeg ca-certificates python3-pip cron && \
+RUN apt-get install -y --no-install-recommends ffmpeg ca-certificates python3-pip cron vim && \
     rm -rf /var/lib/apt/lists/*
 
 # 拷贝当前项目到 /app 目录
