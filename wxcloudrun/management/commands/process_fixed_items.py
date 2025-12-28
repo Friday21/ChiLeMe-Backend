@@ -139,6 +139,18 @@ class Command(BaseCommand):
                         note=note_identifier
                     )
                     logger.info(f"Processed Loan {loan.name}: Principal -{principal_payment}, Interest -{monthly_interest}, Periods -1")
+
+                    # Update Asset
+                    if loan.account:
+                        assets = Asset.objects.filter(user_openId=loan.user_openId, name=loan.account)
+                        if assets.exists():
+                            asset = assets.first()
+                            original_value = asset.value
+                            asset.value -= total_payment
+                            asset.save()
+                            logger.info(f"Updated Asset {asset.name} (ID: {asset.id}) value from {original_value} to {asset.value}")
+                        else:
+                            logger.warning(f"Asset '{loan.account}' not found for user {loan.user_openId}. Loan processed but asset not updated.")
                     
                 except Exception as e:
                     logger.error(f"Error processing loan {loan.name}: {e}")
