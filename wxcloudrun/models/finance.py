@@ -91,6 +91,7 @@ class Loan(models.Model):
     rate = models.DecimalField(max_digits=5, decimal_places=2)
     method = models.CharField(max_length=50, choices=LOAN_METHODS, default='equal_principal')
     repayment_date = models.IntegerField(help_text="Day of the month (1-28)")
+    account = models.CharField(max_length=100, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

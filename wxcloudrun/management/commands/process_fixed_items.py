@@ -131,7 +131,7 @@ class Command(BaseCommand):
                         category='Loan Repayment',
                         amount=principal_payment,
                         date=scheduled_date,
-                        account='Loan Account', 
+                        account=loan.account, 
                         note=note_identifier
                     )
                     logger.info(f"Processed Loan {loan.name}: Principal -{principal_payment}, Periods -1")

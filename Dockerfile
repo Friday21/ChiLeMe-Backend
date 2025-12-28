@@ -31,6 +31,7 @@ COPY crontab /etc/cron.d/stock-cron
 RUN chmod 0644 /etc/cron.d/stock-cron
 RUN crontab /etc/cron.d/stock-cron
 RUN touch /var/log/stock_update.log
+RUN touch /app/run_update_stock.sh && chmod +x /app/run_update_stock.sh
 
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
