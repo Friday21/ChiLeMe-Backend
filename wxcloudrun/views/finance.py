@@ -166,7 +166,13 @@ class TransactionView(View):
         
         qs = Transaction.objects.filter(user_openId=openId).order_by('-date')
         if month:
-            qs = qs.filter(date__startswith=month)
+            # month format: YYYY-MM
+            try:
+                year, mon = month.split('-')
+                qs = qs.filter(date__year=year, date__month=mon)
+            except ValueError:
+                # Fallback or ignore if format is incorrect
+                pass
         if type_:
             qs = qs.filter(type=type_)
         if category:
