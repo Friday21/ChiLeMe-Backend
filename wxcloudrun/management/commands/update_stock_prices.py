@@ -113,9 +113,11 @@ class Command(BaseCommand):
                 for asset in assets:
                     if asset.shares:
                         # Ensure price_cny is Decimal for calculation
-                        asset.value = asset.shares * decimal.Decimal(str(price_cny))
-                        asset.save()
-                        logger.info(f"Updated Asset {asset.id} value to {asset.value}")
+                        new_value = asset.shares * decimal.Decimal(str(price_cny))
+                        if asset.value != new_value:
+                            asset.value = new_value
+                            asset.save()
+                            logger.info(f"Updated Asset {asset.id} value to {asset.value}")
             else:
                 logger.warning(f"Could not find price for {code}")
 

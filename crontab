@@ -1,3 +1,5 @@
 # Run at every hour
 10 * * * * /app/run_update_stock.sh
+# Run fixed items processing every hour
+15 * * * * /app/run_process_fixed_items.sh
 #10 * * * * cd /app && /usr/local/bin/python manage.py update_stock_prices >> /var/log/stock_update.log 2>&1
