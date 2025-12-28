@@ -1,6 +1,7 @@
 import datetime
 import logging
 import decimal
+import calendar
 from django.core.management.base import BaseCommand
 from wxcloudrun.models import FixedItem, Transaction, Asset, Loan
 
@@ -13,43 +14,60 @@ class Command(BaseCommand):
         logger.info('Starting fixed items processing...')
         
         today = datetime.date.today()
-        day_of_month = today.day
+        current_year = today.year
+        current_month = today.month
+        current_day = today.day
         
+        # Helper to get scheduled date safely
+        def get_scheduled_date(day):
+            try:
+                # Handle cases where day is larger than month length
+                last_day = calendar.monthrange(current_year, current_month)[1]
+                target_day = min(day, last_day)
+                return datetime.date(current_year, current_month, target_day)
+            except Exception as e:
+                logger.error(f"Error calculating date for day {day}: {e}")
+                return None
+
         # 1. Process Fixed Items
-        fixed_items = FixedItem.objects.filter(date_value=day_of_month)
+        # Filter items that should have run by now (inclusive)
+        fixed_items = FixedItem.objects.filter(date_value__lte=current_day)
         
         if fixed_items.exists():
             for item in fixed_items:
-                logger.info(f"Processing FixedItem {item.name} (ID: {item.id}) for user {item.user_openId}")
-                
-                # Check for duplicate transaction
-                note_identifier = f"Fixed Item: {item.name}"
-                
-                exists = Transaction.objects.filter(
-                    user_openId=item.user_openId,
-                    date=today,
-                    note=note_identifier,
-                    amount=item.amount,
-                    type=item.type,
-                    account=item.account
-                ).exists()
-                
-                if exists:
-                    logger.info(f"Transaction for {item.name} already exists for today. Skipping.")
-                    continue
-                
                 try:
+                    scheduled_date = get_scheduled_date(item.date_value)
+                    if not scheduled_date:
+                        continue
+
+                    # Check for duplicate transaction for this month
+                    note_identifier = f"Fixed Item: {item.name}"
+                    
+                    exists = Transaction.objects.filter(
+                        user_openId=item.user_openId,
+                        date__year=current_year,
+                        date__month=current_month,
+                        note=note_identifier
+                    ).exists()
+                    
+                    if exists:
+                        continue
+                    
+                    logger.info(f"Processing FixedItem {item.name} (ID: {item.id}) scheduled for {scheduled_date}")
+
+                    # Create Transaction
                     transaction = Transaction.objects.create(
                         user_openId=item.user_openId,
                         type=item.type,
                         category='Fixed Item', 
                         amount=item.amount,
-                        date=today,
+                        date=scheduled_date, # Use the scheduled date
                         account=item.account,
                         note=note_identifier
                     )
                     logger.info(f"Created Transaction {transaction.id}")
                     
+                    # Update Asset
                     assets = Asset.objects.filter(user_openId=item.user_openId, name=item.account)
                     if assets.exists():
                         asset = assets.first()
@@ -68,34 +86,37 @@ class Command(BaseCommand):
                 except Exception as e:
                     logger.error(f"Error processing item {item.name}: {e}")
         else:
-            logger.info(f'No fixed items scheduled for day {day_of_month}.')
+            logger.info(f'No fixed items scheduled on or before day {current_day}.')
 
         # 2. Process Loans
-        logger.info('Starting loan processing...')
-        loans = Loan.objects.filter(repayment_date=day_of_month)
+        loans = Loan.objects.filter(repayment_date__lte=current_day)
         
         if loans.exists():
             for loan in loans:
-                if loan.periods <= 0:
-                    continue
-
-                logger.info(f"Processing Loan {loan.name} (ID: {loan.id}) for user {loan.user_openId}")
-                note_identifier = f"Loan Repayment: {loan.name}"
-                
-                # Check for duplicate
-                exists = Transaction.objects.filter(
-                    user_openId=loan.user_openId,
-                    date=today,
-                    note=note_identifier
-                ).exists()
-                
-                if exists:
-                    logger.info(f"Loan repayment for {loan.name} already processed for today. Skipping.")
-                    continue
-                
                 try:
+                    if loan.periods <= 0:
+                        continue
+
+                    scheduled_date = get_scheduled_date(loan.repayment_date)
+                    if not scheduled_date:
+                         continue
+
+                    note_identifier = f"Loan Repayment: {loan.name}"
+                    
+                    # Check for duplicate for this month
+                    exists = Transaction.objects.filter(
+                        user_openId=loan.user_openId,
+                        date__year=current_year,
+                        date__month=current_month,
+                        note=note_identifier
+                    ).exists()
+                    
+                    if exists:
+                        continue
+                    
+                    logger.info(f"Processing Loan {loan.name} (ID: {loan.id}) scheduled for {scheduled_date}")
+
                     # Calculate principal payment: Principal / Periods
-                    # Ensure we use Decimal for precision
                     principal_payment = loan.principal / decimal.Decimal(loan.periods)
                     
                     # Update Loan
@@ -103,14 +124,14 @@ class Command(BaseCommand):
                     loan.periods -= 1
                     loan.save()
                     
-                    # Create Transaction (for record and dedup)
+                    # Create Transaction
                     Transaction.objects.create(
                         user_openId=loan.user_openId,
                         type='expense',
                         category='Loan Repayment',
                         amount=principal_payment,
-                        date=today,
-                        account='Loan Account', # Placeholder as Loan doesn't have linked account
+                        date=scheduled_date,
+                        account='Loan Account', 
                         note=note_identifier
                     )
                     logger.info(f"Processed Loan {loan.name}: Principal -{principal_payment}, Periods -1")
@@ -118,6 +139,6 @@ class Command(BaseCommand):
                 except Exception as e:
                     logger.error(f"Error processing loan {loan.name}: {e}")
         else:
-            logger.info(f'No loans scheduled for repayment on day {day_of_month}.')
+            logger.info(f'No loans scheduled on or before day {current_day}.')
 
         logger.info('Processing completed.')
