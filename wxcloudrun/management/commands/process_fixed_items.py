@@ -119,6 +119,10 @@ class Command(BaseCommand):
                     # Calculate principal payment: Principal / Periods
                     principal_payment = loan.principal / decimal.Decimal(loan.periods)
                     
+                    # Calculate interest: (Principal * Rate/100) / 12
+                    monthly_interest = (loan.principal * (loan.rate / decimal.Decimal("100"))) / decimal.Decimal("12")
+                    total_payment = principal_payment + monthly_interest
+                    
                     # Update Loan
                     loan.principal -= principal_payment
                     loan.periods -= 1
@@ -129,12 +133,12 @@ class Command(BaseCommand):
                         user_openId=loan.user_openId,
                         type='expense',
                         category='Loan Repayment',
-                        amount=principal_payment,
+                        amount=total_payment,
                         date=scheduled_date,
                         account=loan.account, 
                         note=note_identifier
                     )
-                    logger.info(f"Processed Loan {loan.name}: Principal -{principal_payment}, Periods -1")
+                    logger.info(f"Processed Loan {loan.name}: Principal -{principal_payment}, Interest -{monthly_interest}, Periods -1")
                     
                 except Exception as e:
                     logger.error(f"Error processing loan {loan.name}: {e}")
