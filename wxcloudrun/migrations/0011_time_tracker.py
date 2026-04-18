@@ -1,6 +1,6 @@
 """
 Migration: add time tracking models
-  - TimeItem    (原始浏览记录，每条含开始时间/耗时/分类/detail/title/source)
+  - TimeItem    (原始浏览记录，每条含开始时间/耗时/分类/detail/title/source/detail_hash)
   - TimeInsight (每天的 AI 洞察文字，可选)
 """
 
@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('duration',     models.IntegerField(default=0)),
                 ('category',     models.CharField(max_length=64, default='其他')),
                 ('title',        models.CharField(max_length=512, default='')),
-                ('detail',       models.CharField(max_length=2048)),
+                ('detail',       models.CharField(max_length=500)),
                 ('domain',       models.CharField(max_length=256, db_index=True)),
                 ('source',       models.CharField(max_length=64, default='browser')),
                 ('createdAt',    models.DateTimeField(auto_now_add=True)),
@@ -37,6 +37,7 @@ class Migration(migrations.Migration):
                 'ordering': ['start_time'],
             },
         ),
+        # 唯一约束：256*4 + 8 + 500*4 = 3032 bytes ✓（< MySQL 3072 字节限制）
         migrations.AddConstraint(
             model_name='timeitem',
             constraint=models.UniqueConstraint(

@@ -56,10 +56,11 @@ class TimeItem(models.Model):
       title            – 页面标题或域名，如 "www.google.com"
       start            – ISO 8601，含时区，如 "2026-04-18T12:19:00+08:00"
       duration_seconds – 耗时（秒）
-      detail           – 完整 URL 或 App 名
+      detail           – 完整 URL 或 App 名（取前 500 字符存储和去重）
       source           – 来源，如 "browser" / "app"
 
     去重键：(user_open_id, start_time, detail)
+    索引大小：256*4 + 8 + 500*4 = 3032 字节 ✓（< MySQL 3072 字节限制）
     同一条记录再次上传时，若 duration 有变化则更新，否则跳过。
     """
     user_open_id = models.CharField(max_length=256, db_index=True)
@@ -73,7 +74,7 @@ class TimeItem(models.Model):
     duration     = models.IntegerField(default=0)               # 耗时，单位：秒
     category     = models.CharField(max_length=64, default='其他')
     title        = models.CharField(max_length=512, default='')  # 页面标题
-    detail       = models.CharField(max_length=2048)             # 完整 URL 或 App 名
+    detail       = models.CharField(max_length=500)              # URL 或 App 名（前 500 字符）
     domain       = models.CharField(max_length=256, db_index=True)  # 提取的主域名
     source       = models.CharField(max_length=64, default='browser')  # browser / app / ...
 
@@ -82,7 +83,6 @@ class TimeItem(models.Model):
 
     class Meta:
         db_table        = 'TimeItem'
-        # 去重：同一用户同一开始时间同一地址，只存一条
         unique_together = ('user_open_id', 'start_time', 'detail')
         ordering        = ['start_time']
 

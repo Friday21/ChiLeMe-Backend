@@ -282,6 +282,7 @@ class TimeUploadView(View):
 
                 start_dt    = _parse_start_time(start_str)
                 record_date = start_dt.date()
+                detail      = detail[:500]   # 截取前 500 字符，匹配字段长度
                 domain      = extract_domain(detail)
 
                 # 去重逻辑
