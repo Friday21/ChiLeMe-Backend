@@ -15,8 +15,12 @@ Including another URLconf
 """
 
 from wxcloudrun.views import (counter, UserView, DinnerView, LoginView, FriendDinnerView, DinnerLikeView, FriendView,
-                              UserNotesView, UserNotesHistoryView, UserNotesReportView)
-from wxcloudrun.views.finance import (DashboardView, TransactionView, PlanningView, AssetView, 
+                              UserNotesView, UserNotesHistoryView, UserNotesReportView,
+                              MealAnalyzeView, MealListView, MealDetailView,
+                              PKListView, PKAcceptView, PKDeclineView, PKDetailView, PKSettleView,
+                              ChiLeMeProfileView,
+                              TimeUploadView, TimeOverviewView, TimeWeekView, TimeSitesView)
+from wxcloudrun.views.finance import (DashboardView, TransactionView, PlanningView, AssetView,
                                       FixedItemView, FutureItemView, LoanView, ProfileView, AssetCorrectionView)
 from django.conf.urls import url
 
@@ -46,4 +50,25 @@ urlpatterns = (
     url(r'^^api/loans/(?P<openId>\w+)/(?P<pk>\d+)(/)?$', LoanView.as_view()),
     url(r'^^api/profile/(?P<openId>\w+)(/)?$', ProfileView.as_view()),
     url(r'^^api/assets/correction/(?P<openId>\w+)(/)?$', AssetCorrectionView.as_view()),
+
+    # ── ChiLeMe 餐食 ─────────────────────────────────────────────────────────
+    url(r'^^api/chileme/meal/analyze(/)?$', MealAnalyzeView.as_view()),
+    url(r'^^api/chileme/meals/(?P<openId>[\w-]+)(/)?$', MealListView.as_view()),
+    url(r'^^api/chileme/meals/(?P<openId>[\w-]+)/(?P<pk>\d+)(/)?$', MealDetailView.as_view()),
+
+    # ── ChiLeMe PK ───────────────────────────────────────────────────────────
+    url(r'^^api/chileme/pk/(?P<openId>[\w-]+)(/)?$', PKListView.as_view()),
+    url(r'^^api/chileme/pk/(?P<pkId>\d+)/accept(/)?$', PKAcceptView.as_view()),
+    url(r'^^api/chileme/pk/(?P<pkId>\d+)/decline(/)?$', PKDeclineView.as_view()),
+    url(r'^^api/chileme/pk/(?P<pkId>\d+)/detail(/)?$', PKDetailView.as_view()),
+    url(r'^^api/chileme/pk/(?P<pkId>\d+)/settle(/)?$', PKSettleView.as_view()),
+    url(r'^^api/chileme/profile/(?P<openId>[\w-]+)(/)?$', ChiLeMeProfileView.as_view()),
+
+    # ── 时间追踪：本地上传（定时任务 → 服务器）────────────────────────────────
+    url(r'^^api/time/upload/(?P<openId>[\w-]+)(/)?$', TimeUploadView.as_view()),
+
+    # ── 时间追踪：小程序读取 ───────────────────────────────────────────────────
+    url(r'^^api/time/overview/(?P<openId>[\w-]+)(/)?$', TimeOverviewView.as_view()),
+    url(r'^^api/time/week/(?P<openId>[\w-]+)(/)?$', TimeWeekView.as_view()),
+    url(r'^^api/time/sites/(?P<openId>[\w-]+)(/)?$', TimeSitesView.as_view()),
 )
