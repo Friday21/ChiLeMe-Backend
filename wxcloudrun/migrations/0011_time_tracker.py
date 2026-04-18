@@ -10,7 +10,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wxcloudrun', '0010_chileme_models'),
+        ('wxcloudrun', '0009_auto_20251228_0521'),
     ]
 
     operations = [
