@@ -14,7 +14,11 @@ POST /api/time/upload/<openId>/
         "start":            "2026-04-18T12:19:00+08:00",
         "duration_seconds": 60,
         "detail":           "https://www.google.com/search?q=codex",
-        "source":           "browser"
+        "source":           "browser",
+        "date":             "2026-04-18"        # 可选；若提供则按此归档到对应日期，
+                                                # 否则按 start 的日期归档。典型场景：
+                                                # 睡眠记录 start 是入睡时刻（可能跨天），
+                                                # date 显式指向"属于哪一天的睡眠"。
       },
       ...
     ]
@@ -275,13 +279,23 @@ class TimeUploadView(View):
                 title            = str(raw.get('title', '')).strip()
                 detail           = str(raw.get('detail', '')).strip()
                 source           = str(raw.get('source', 'browser')).strip() or 'browser'
+                date_override    = str(raw.get('date', '')).strip()
 
                 if not start_str or not detail:
                     errors += 1
                     continue
 
                 start_dt    = _parse_start_time(start_str)
-                record_date = start_dt.date()
+                # record_date 优先取显式 date 字段（支持跨天场景，如睡眠记录），
+                # 没有就按 start 的日期归档。
+                if date_override:
+                    try:
+                        record_date = _parse_date(date_override)
+                    except ValueError:
+                        logger.warning(f'[TimeUpload] invalid date field: {date_override}, fallback to start date')
+                        record_date = start_dt.date()
+                else:
+                    record_date = start_dt.date()
                 detail      = detail[:500]   # 截取前 500 字符，匹配字段长度
                 domain      = extract_domain(detail)
 
@@ -305,13 +319,15 @@ class TimeUploadView(View):
                         source=source,
                     )
                     created += 1
-                elif existing.duration != duration_seconds:
-                    # duration 有变化，更新
-                    existing.duration = duration_seconds
-                    existing.category = category
-                    existing.title    = title
-                    existing.source   = source
-                    existing.save(update_fields=['duration', 'category', 'title', 'source', 'updatedAt'])
+                elif existing.duration != duration_seconds or existing.record_date != record_date:
+                    # duration 或 record_date 有变化，更新
+                    # （record_date 变化场景：旧数据按 start 归档错了天，再次上传带 date 修正）
+                    existing.duration    = duration_seconds
+                    existing.record_date = record_date
+                    existing.category    = category
+                    existing.title       = title
+                    existing.source      = source
+                    existing.save(update_fields=['duration', 'record_date', 'category', 'title', 'source', 'updatedAt'])
                     updated += 1
                 else:
                     skipped += 1
@@ -323,15 +339,30 @@ class TimeUploadView(View):
         # ── 可选：保存当日 insight ──
         insight = str(body.get('insight', '')).strip()
         if insight:
-            # 从 items 中取最晚的日期作为 insight 的日期
-            dates_in_upload = set()
-            for raw in items_raw:
+            # 允许整条上传请求体里显式指定 insight 的日期（兼容旧调用：无则推导）
+            insight_date_str = str(body.get('date', '')).strip()
+            target_date = None
+            if insight_date_str:
                 try:
-                    dt = _parse_start_time(raw.get('start', ''))
-                    dates_in_upload.add(dt.date())
-                except Exception:
-                    pass
-            target_date = max(dates_in_upload) if dates_in_upload else _china_today()
+                    target_date = _parse_date(insight_date_str)
+                except ValueError:
+                    target_date = None
+
+            if target_date is None:
+                # 从 items 中取最晚的日期（优先用每条 item 的 date 字段，没有则用 start）
+                dates_in_upload = set()
+                for raw in items_raw:
+                    try:
+                        item_date = str(raw.get('date', '')).strip()
+                        if item_date:
+                            dates_in_upload.add(_parse_date(item_date))
+                        else:
+                            dt = _parse_start_time(raw.get('start', ''))
+                            dates_in_upload.add(dt.date())
+                    except Exception:
+                        pass
+                target_date = max(dates_in_upload) if dates_in_upload else _china_today()
+
             TimeInsight.objects.update_or_create(
                 user_open_id=openId,
                 record_date=target_date,
