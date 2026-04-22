@@ -122,8 +122,11 @@ def _aggregate(items):
     """
     # 按分类累计秒数
     cat_seconds   = defaultdict(int)
-    # 按域名累计秒数和访问次数
-    domain_data   = defaultdict(lambda: {'seconds': 0, 'visits': 0, 'name': '', 'category': ''})
+    # 按域名累计秒数/访问次数/最早开始/最晚结束
+    domain_data   = defaultdict(lambda: {
+        'seconds': 0, 'visits': 0, 'name': '', 'category': '',
+        'start': None, 'end': None,
+    })
     # 按小时 + 分类累计秒数（用于时段热力图）
     hourly_cat    = defaultdict(lambda: defaultdict(int))
     # 按日期累计秒数（用于周趋势）
@@ -142,6 +145,13 @@ def _aggregate(items):
         # 优先用上传的 title，否则用域名
         d['name']      = d['name'] or (item.title or item.domain)
         d['category']  = item.category
+
+        # 开始/结束时间（同域名多条时取最早入 & 最晚出）
+        item_end = item.start_time + timedelta(seconds=sec)
+        if d['start'] is None or item.start_time < d['start']:
+            d['start'] = item.start_time
+        if d['end'] is None or item_end > d['end']:
+            d['end'] = item_end
 
         hour = item.start_time.hour
         hourly_cat[hour][item.category] += sec
@@ -167,12 +177,16 @@ def _aggregate(items):
     sites = sorted(
         [
             {
-                'name':     info['name'] or _domain_to_name(dom),
-                'domain':   dom,
-                'category': info['category'],
-                'minutes':  round(info['seconds'] / 60),
-                'visits':   info['visits'],
-                'hourly':   _site_hourly(items, dom),
+                'name':      info['name'] or _domain_to_name(dom),
+                'domain':    dom,
+                'category':  info['category'],
+                'minutes':   round(info['seconds'] / 60),
+                'visits':    info['visits'],
+                'hourly':    _site_hourly(items, dom),
+                # ISO 字符串（naive UTC+8）。用于前端展示开始/结束时间点，
+                # 典型场景：睡眠记录显示"入睡 23:01 · 起床 05:22"。
+                'startTime': info['start'].isoformat() if info['start'] else None,
+                'endTime':   info['end'].isoformat()   if info['end']   else None,
             }
             for dom, info in domain_data.items()
         ],
