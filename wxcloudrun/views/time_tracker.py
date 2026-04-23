@@ -453,7 +453,21 @@ class TimeOverviewView(View):
 
 
 class TimeWeekView(View):
-    """GET /api/time/week/<openId>/?date=YYYY-MM-DD"""
+    """GET /api/time/week/<openId>/?date=YYYY-MM-DD
+
+    返回过去 7 天（含 pivot 当天，往前推 6 天）的日维度数据：
+      - totalMinutes：全天总时长
+      - categories：各分类时长 dict，{catName: minutes}
+
+    示例：
+      {
+        'data': [
+          {'date': '2026-04-17', 'totalMinutes': 720,
+           'categories': {'工作': 420, '学习': 100, '娱乐': 50, '睡眠': 480}},
+          ...
+        ]
+      }
+    """
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -466,31 +480,36 @@ class TimeWeekView(View):
         except ValueError:
             return JsonResponse({'code': 1, 'msg': 'date 格式错误'}, status=400)
 
-        # 本周一到本周日
-        monday     = pivot - timedelta(days=pivot.weekday())
-        week_dates = [monday + timedelta(days=i) for i in range(7)]
+        # 过去 7 天：pivot 往前推 6 天（含 pivot 共 7 天）
+        week_dates = [pivot - timedelta(days=i) for i in range(6, -1, -1)]
         today      = _china_today()
 
-        # 批量查询本周所有 items
+        # 批量查询这 7 天所有 items
         items = TimeItem.objects.filter(
             user_open_id=openId,
             record_date__gte=week_dates[0],
             record_date__lte=week_dates[-1],
         )
 
-        # 按日期累计
+        # 按日期累计 total + 按分类累计
         date_seconds: dict = defaultdict(int)
+        date_cat_seconds: dict = defaultdict(lambda: defaultdict(int))
         for item in items:
-            date_seconds[_fmt_date(item.record_date)] += item.duration
+            dk = _fmt_date(item.record_date)
+            date_seconds[dk] += item.duration
+            date_cat_seconds[dk][item.category] += item.duration
 
-        data = [
-            {
-                'date':         _fmt_date(d),
-                'totalMinutes': round(date_seconds.get(_fmt_date(d), 0) / 60)
-                                if d <= today else 0,
-            }
-            for d in week_dates
-        ]
+        data = []
+        for d in week_dates:
+            dk = _fmt_date(d)
+            is_future = d > today
+            total_sec = 0 if is_future else date_seconds.get(dk, 0)
+            cats_sec  = {} if is_future else date_cat_seconds.get(dk, {})
+            data.append({
+                'date':         dk,
+                'totalMinutes': round(total_sec / 60),
+                'categories':   {k: round(v / 60) for k, v in cats_sec.items()},
+            })
 
         return JsonResponse({'code': 0, 'data': data})
 
