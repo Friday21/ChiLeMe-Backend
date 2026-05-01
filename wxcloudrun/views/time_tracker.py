@@ -111,6 +111,20 @@ def _parse_start_time(s: str) -> datetime:
     raise ValueError(f'无法解析时间：{s}')
 
 
+def _resolve_record_date(raw: dict, start_dt: datetime) -> date_type:
+    """
+    计算记录归属日期。
+    优先使用 item.date（支持睡眠等跨天记录），无效时回退到 start 日期。
+    """
+    date_override = str(raw.get('date', '')).strip()
+    if date_override:
+        try:
+            return _parse_date(date_override)
+        except ValueError:
+            logger.warning(f'[TimeUpload] invalid date field: {date_override}, fallback to start date')
+    return start_dt.date()
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 聚合辅助
 # ─────────────────────────────────────────────────────────────────────────────
@@ -282,6 +296,30 @@ class TimeUploadView(View):
         if not isinstance(items_raw, list) or not items_raw:
             return JsonResponse({'code': 1, 'msg': 'items 不能为空'}, status=400)
 
+        # ── 睡眠记录以后上传为准 ──
+        # 睡眠通常是跨天汇总后的单条/少量记录，重新上传时应替换当天旧结果，
+        # 避免旧睡眠段与新睡眠段同时存在导致总时长翻倍。
+        sleep_dates = set()
+        for raw in items_raw:
+            try:
+                category = str(raw.get('category', '其他')).strip() or '其他'
+                start_str = raw.get('start', '')
+                detail = str(raw.get('detail', '')).strip()
+                if category != '睡眠' or not start_str or not detail:
+                    continue
+                start_dt = _parse_start_time(start_str)
+                sleep_dates.add(_resolve_record_date(raw, start_dt))
+            except Exception as e:
+                logger.warning(f'[TimeUpload] sleep pre-scan error: {e} | raw={raw}')
+
+        deleted_sleep = 0
+        if sleep_dates:
+            deleted_sleep, _ = TimeItem.objects.filter(
+                user_open_id=openId,
+                record_date__in=sleep_dates,
+                category='睡眠',
+            ).delete()
+
         # ── 逐条处理 ──
         created = updated = skipped = errors = 0
 
@@ -293,7 +331,6 @@ class TimeUploadView(View):
                 title            = str(raw.get('title', '')).strip()
                 detail           = str(raw.get('detail', '')).strip()
                 source           = str(raw.get('source', 'browser')).strip() or 'browser'
-                date_override    = str(raw.get('date', '')).strip()
 
                 if not start_str or not detail:
                     errors += 1
@@ -302,14 +339,7 @@ class TimeUploadView(View):
                 start_dt    = _parse_start_time(start_str)
                 # record_date 优先取显式 date 字段（支持跨天场景，如睡眠记录），
                 # 没有就按 start 的日期归档。
-                if date_override:
-                    try:
-                        record_date = _parse_date(date_override)
-                    except ValueError:
-                        logger.warning(f'[TimeUpload] invalid date field: {date_override}, fallback to start date')
-                        record_date = start_dt.date()
-                else:
-                    record_date = start_dt.date()
+                record_date = _resolve_record_date(raw, start_dt)
                 detail      = detail[:500]   # 截取前 500 字符，匹配字段长度
                 domain      = extract_domain(detail)
 
@@ -385,7 +415,8 @@ class TimeUploadView(View):
 
         logger.info(
             f'[TimeUpload] {openId} total={len(items_raw)} '
-            f'created={created} updated={updated} skipped={skipped} errors={errors}'
+            f'created={created} updated={updated} skipped={skipped} '
+            f'deleted_sleep={deleted_sleep} errors={errors}'
         )
 
         return JsonResponse({
@@ -396,6 +427,7 @@ class TimeUploadView(View):
                 'created': created,
                 'updated': updated,
                 'skipped': skipped,
+                'deletedSleep': deleted_sleep,
                 'errors':  errors,
             },
         })
