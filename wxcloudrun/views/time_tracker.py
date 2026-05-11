@@ -31,7 +31,7 @@ POST /api/time/upload/<openId>/
 
 ─── 小程序读取 ─────────────────────────────────────────────────────────────
 GET /api/time/overview/<openId>/?date=YYYY-MM-DD
-GET /api/time/week/<openId>/?date=YYYY-MM-DD
+GET /api/time/week/<openId>/?date=YYYY-MM-DD&days=7|15|30|90
 GET /api/time/sites/<openId>/?date=YYYY-MM-DD
 """
 
@@ -485,9 +485,9 @@ class TimeOverviewView(View):
 
 
 class TimeWeekView(View):
-    """GET /api/time/week/<openId>/?date=YYYY-MM-DD
+    """GET /api/time/week/<openId>/?date=YYYY-MM-DD&days=7|15|30|90
 
-    返回过去 7 天（含 pivot 当天，往前推 6 天）的日维度数据：
+    返回过去 N 天（含 pivot 当天）的日维度数据：
       - totalMinutes：全天总时长
       - categories：各分类时长 dict，{catName: minutes}
 
@@ -512,11 +512,18 @@ class TimeWeekView(View):
         except ValueError:
             return JsonResponse({'code': 1, 'msg': 'date 格式错误'}, status=400)
 
-        # 过去 7 天：pivot 往前推 6 天（含 pivot 共 7 天）
-        week_dates = [pivot - timedelta(days=i) for i in range(6, -1, -1)]
+        try:
+            days = int(request.GET.get('days', 7))
+        except (TypeError, ValueError):
+            return JsonResponse({'code': 1, 'msg': 'days 格式错误'}, status=400)
+        if days not in (7, 15, 30, 90):
+            return JsonResponse({'code': 1, 'msg': 'days 仅支持 7、15、30、90'}, status=400)
+
+        # 过去 N 天：pivot 往前推 days-1 天（含 pivot 共 days 天）
+        week_dates = [pivot - timedelta(days=i) for i in range(days - 1, -1, -1)]
         today      = _china_today()
 
-        # 批量查询这 7 天所有 items
+        # 批量查询这段时间所有 items
         items = TimeItem.objects.filter(
             user_open_id=openId,
             record_date__gte=week_dates[0],
